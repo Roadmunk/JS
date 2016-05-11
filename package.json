@@ -1,0 +1,20 @@
+{
+	"name"        : "JSClass",
+	"version"     : "1.0.0",
+	"description" : "OOP library for Javascript",
+	"author"      : "Tomas Benda <tomas@roadmunk.com>",
+
+	"dependencies": {
+		"amdefine" : "1.0.x"
+	},
+
+	"devDependencies": {
+		"chance"        : "0.x.x",
+		"mocha"         : "2.x.x",
+		"chai"          : "3.x.x",
+		"chai-datetime" : "1.x.x"
+	},
+	"engines" : {
+		"node" : ">=0.12"
+	}
+}
