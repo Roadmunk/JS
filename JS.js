@@ -115,7 +115,7 @@ JS.class = function(className, originalProperties) {
 function setupSuperClass(clazz, properties) {
 	// setup super class
 	if (properties.inherits && typeof properties.inherits != 'function')
-		throw "'inherits' property is specified but is not a function for class: " + clazz.__className__;
+		throw new Error("'inherits' property is specified but is not a function for class: " + clazz.__className__);
 
 	if (properties.inherits) {
 		clazz.__parentClass__       = properties.inherits.prototype.constructor;
@@ -224,7 +224,7 @@ function getConstructor(properties, className) {
 	var constructor = properties.hasOwnProperty('constructor') ? properties.constructor : undefined;
 
 	if (constructor && typeof constructor != "function")
-		throw "constructor must be a function for class: " + className;
+		throw new Error("constructor must be a function for class: " + className);
 
 	return constructor;
 }
@@ -284,9 +284,16 @@ function extendPropertiesWithClass(properties, clazz, options) {
 function extendWithObject(dest, source) {
 	if (!source) return;
 
-	for (var a in source) {
-		if (source.hasOwnProperty(a))
-			dest[a] = clone(source[a]);
+	for (var name in source) {
+		if (source.hasOwnProperty(name)) {
+			var sourceValue = source[name];
+
+			// recurse into method regions
+			if (typeof sourceValue === 'object' && name.startsWith('$'))
+				extendWithMethodWrappers(dest, sourceValue);
+			else
+				dest[name] = clone(sourceValue);
+		}
 	}
 }
 
@@ -297,7 +304,11 @@ function extendWithMethodWrappers(dest, source, clazz) {
 		if (source.hasOwnProperty(methodName)) {
 			var sourceMethod = source[methodName];
 
-			if (!sourceMethod || sourceMethod.abstract || typeof sourceMethod !== 'function')
+			// recurse into method regions
+			if (typeof sourceMethod === 'object' && methodName.startsWith('$'))
+				extendWithMethodWrappers(dest, sourceMethod);
+
+			else if (!sourceMethod || sourceMethod.abstract || typeof sourceMethod !== 'function')
 				dest[methodName] = clone(sourceMethod);
 
 			else {
@@ -363,7 +374,7 @@ JS.setter = function(property, options) {
  */
 JS.class.on = function(eventName, callback) {
 	if (classEvents[eventName] === undefined)
-		throw "JS.class.on: unknown event name: " + eventName;
+		throw new Error("JS.class.on: unknown event name: " + eventName);
 
 	classEvents[eventName].push(callback);
 };
@@ -398,7 +409,7 @@ function createFunctionHelper(clazz, args) {
 	// regular instance initialization
 	if (this instanceof clazz) {
 		if (clazz.properties === undefined)
-			throw "cannot instantiate stub class: " + this.constructor.__className__;
+			throw new Error("cannot instantiate stub class: " + this.constructor.__className__);
 
 		var recursiveCall    = clazz.caller === createFunctionHelper;
 		var constructingThis = this.constructor === clazz;
@@ -407,7 +418,7 @@ function createFunctionHelper(clazz, args) {
 		if (!constructingThis || !recursiveCall) {
 			// check for abstract class only if this is the top-level call (ie. not a base-class constructor call)
 			if (constructingThis && BaseClass.isAbstract.call(clazz))
-				throw "cannot instantiate abstract class: " + this.constructor.__className__;
+				throw new Error("cannot instantiate abstract class: " + this.constructor.__className__);
 
 			// add instance fields
 			createFields.call(this, clazz.properties.fields);
@@ -422,14 +433,14 @@ function createFunctionHelper(clazz, args) {
 		var source = args[0];
 
 		if (source === undefined)
-			throw "required parameter missing; must supply a reference to subclass instance";
+			throw new Error("required parameter missing; must supply a reference to subclass instance");
 
 		if (!source.constructor || !source.constructor.isSubclass)
-			throw "parameter must be an instance of a class";
+			throw new Error("parameter must be an instance of a class");
 
 		// check to make sure that the requested class is a base class of this one
 		if (!source.constructor.isSubclass(clazz))
-			throw "can only cast to a base class";
+			throw new Error("can only cast to a base class");
 
 		var result = new clazz();
 
@@ -604,7 +615,7 @@ JS.class.initialFieldValue = function(instance, field) {
 				return null;
 
 			// this would set each instance with the same object reference probably leading to problems
-			throw "cannot initialize an instance field with a specific object value";
+			throw new Error("cannot initialize an instance field with a specific object value");
 
 		case "undefined":
 			if (!field.hasOwnProperty('init') && field.type !== undefined)
@@ -624,7 +635,7 @@ function getSuperMethod(method, clazz) {
 	var parentClass = clazz.__parentClass__;
 
 	if (method === clazz.properties.userConstructor)
-		throw "cannot call $super in a constructor; it is called automatically";
+		throw new Error("cannot call $super in a constructor; it is called automatically");
 
 	while (parentClass !== undefined) {
 		var desc = Object.getOwnPropertyDescriptor(parentClass.prototype, method.methodName);
@@ -635,7 +646,7 @@ function getSuperMethod(method, clazz) {
 				return desc.get;
 			if (method.methodType == "set" && typeof desc.set === "function")
 				return desc.set;
-			throw "this method/field does not override the proper property type: " + method.methodName;
+			throw new Error("this method/field does not override the proper property type: " + method.methodName);
 		}
 		parentClass = parentClass.__parentClass__;
 	}
@@ -701,6 +712,25 @@ JS.class.isSubclass = function(possibleSubclass, ancestorClass, properSubclass) 
 	}
 
 	return false;
+};
+
+/**
+ * Returns whether the given class includes the provided mixin
+ * @param  {Function}  possibleClass
+ * @param  {Function}  mixin
+ * @return {Boolean}
+ */
+JS.class.hasMixin = function(possibleClass, mixin) {
+	if (!possibleClass || !mixin)
+		return false;
+
+	if (typeof possibleClass === 'object')
+		possibleClass = possibleClass.constructor;
+
+	if (typeof possibleClass.hasMixin !== 'function')
+		return false;
+
+	return possibleClass.hasMixin(mixin);
 };
 
 /**
@@ -865,7 +895,7 @@ JS.util.callback = function callback(func, args, context) {
 	}
 
 	if (func && typeof func != "function")
-		throw "callback is not a function: " + func;
+		throw new Error("callback is not a function: " + func);
 };
 
 /**
@@ -929,10 +959,10 @@ JS.util.proxy = function(object, property, newFunction) {
 	var oldFunc = object[property];
 
 	if (typeof oldFunc != "function")
-		throw "property value must be a function: " + property;
+		throw new Error("property value must be a function: " + property);
 
 	if (typeof newFunction != "function")
-		throw "newFunction must be a function: " + newFunction;
+		throw new Error("newFunction must be a function: " + newFunction);
 
 	object[property] = function() {
 		var args = [ oldFunc ];
