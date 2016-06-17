@@ -109,6 +109,25 @@ describe('mixin', function() {
 		expect(Bar2.hasMixin(Bar)).to.be.false;
 	});
 
+	it("should be true that the static JS.class.hasMixin method reports true for all inherited mixins", function() {
+		expect(JS.class.hasMixin(Bar, Foo1)).to.be.true;
+		expect(JS.class.hasMixin(Bar, Foo2)).to.be.true;
+		expect(JS.class.hasMixin(Bar, Foo3)).to.be.true;
+		expect(JS.class.hasMixin(Bar, Bar2)).to.be.false;
+
+		expect(JS.class.hasMixin(Bar2, Foo1)).to.be.true;
+		expect(JS.class.hasMixin(Bar2, Foo2)).to.be.true;
+		expect(JS.class.hasMixin(Bar2, Foo3)).to.be.true;
+		expect(JS.class.hasMixin(Bar2, Bar)).to.be.false;
+
+		expect(JS.class.hasMixin(null, null)).to.be.false;
+		expect(JS.class.hasMixin(null, Foo1)).to.be.false;
+		expect(JS.class.hasMixin(Bar,  null)).to.be.false;
+		expect(JS.class.hasMixin(new Bar(), Foo1)).to.be.true;
+		expect(JS.class.hasMixin(new Bar(), 'Foo1')).to.be.true;
+		expect(JS.class.hasMixin(new Bar(), new Foo1())).to.be.true;
+	});
+
 	it('should mixin methods to a base class, allow them to be overridden in a base class, and allow inheriting from that base class', function() {
 		var Base = JS.class('Base',  {
 			mixin : Foo1,
