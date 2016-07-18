@@ -1,15 +1,17 @@
 {
 	"name"        : "JSClass",
-	"version"     : "1.0.0",
+	"version"     : "1.0.1",
 	"description" : "OOP library for Javascript",
 	"author"      : "Tomas Benda <tomas@roadmunk.com>",
+	"license"     : "MIT",
+	"repository"  : "https://github.com/Roadmunk/JS",
 
 	"dependencies": {
 		"amdefine" : "1.0.x"
 	},
 
 	"devDependencies": {
-		"chance"        : "0.x.x",
+		"chance"        : "1.x.x",
 		"mocha"         : "2.x.x",
 		"chai"          : "3.x.x",
 		"chai-datetime" : "1.x.x"
