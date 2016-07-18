@@ -493,7 +493,7 @@ function createMethods(definitions, destination) {
 					method.get.__class__  = this;
 					method.get.super      = makeSuperMethodProxy(method.get);
 					descriptor.get        = method.get;
-
+					descriptor.set        = function() {};	// add silent setter in case there's only a getter (will be overwritten by setter if there is one)
 				}
 				if (typeof method.set === "function") {
 					method.set.methodType = "set";
@@ -536,12 +536,13 @@ function createMethods(definitions, destination) {
  * @param  {Object} destination where to add the new fields
  */
 function createGettersSetters(definitions, destination) {
-	for (var name in definitions) {
+	"use strict";
+	for (let name in definitions) {
 		// normalize again just to be sure
-		var field = definitions[name] = normalizeField(definitions[name]);
+		let field = definitions[name] = normalizeField(definitions[name]);
 
 		// define non-value fields (ie. getters/setters)
-		if (typeof field.get == "function" || typeof field.set == "function") {
+		if (typeof field.get === "function" || typeof field.set === "function") {
 			if (field.get) {
 				field.get.methodType = "get";
 				field.get.methodName = name;
@@ -558,7 +559,9 @@ function createGettersSetters(definitions, destination) {
 				enumerable   : true,
 				configurable : false,
 				get          : field.get,
-				set          : field.set
+				// add silent setter in case there's only a getter
+				// (goes against strict mode but it's useful to be able to do mass field updates without which fields are writable)
+				set          : typeof field.set === 'function' ? field.set : function() {}
 			});
 		}
 	}

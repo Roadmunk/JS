@@ -236,6 +236,29 @@ describe('a class', function() {
 		expect(a.p1).to.equal(1);
 	});
 
+	it('should allow silently setting of fields even in strict mode', function() {
+		const MyClass = JS.class('MyClass', {
+			fields : {
+				getterField : {
+					get : function() { return 5; }
+				}
+			},
+
+			methods : {
+				getterMethod : {
+					get : function() { return 6; }
+				}
+			}
+		});
+
+		let myClass = new MyClass();
+
+		myClass.getterField = 10;
+		myClass.getterMethod = 6;
+		expect(myClass.getterField).to.equal(5);
+		expect(myClass.getterMethod).to.equal(6);
+	});
+
 	it('should call afterCreateInstance after an instance of the class is constructed', function() {
 		var AfterCreateClass = JS.class('AfterCreateClass', {
 			fields : {
