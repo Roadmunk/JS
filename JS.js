@@ -635,15 +635,22 @@ JS.class.initialFieldValue = function(instance, field) {
 };
 
 /**
- * Makes a proxy function that, if nessecary, updates the method's `superStack` with the current
- * invocation of the method to allow for recursive/cyclic super calls
+ * Makes a proxy function that, if nessecary, updates the method's `superStack` callstack for the instance invoking the method,
+ * pushing the current invocation onto the top of the stack. This is nessecary to allow for recursive/cyclic super calls.
+ *
+ * NOTE: a method must be proxied using this function *before* any properties are assigned to it.
+ * 
  * @param  {function} method
  * @return {function}
  */
 function makeSuperStackUpdaterProxy(method) {
+	"use strict";
 	return function proxy() {
-		var updatedStack = false;
-		var instanceStack;
+		let updatedStack = false;	// flag indicating that we did modify the stack, and need to clean up afterwards
+		let instanceStack; 			// the super callstack for `this` instance, if any exists
+
+		// superStack is a map of instance to an array of callstack methods on that instance,
+		// and is initialized on the first invocation of `super` for each method (@see makeSuperMethodProxy())
 		if (proxy.superStack && proxy.superStack.has(this)) {
 			instanceStack = proxy.superStack.get(this);
 			if (instanceStack.length > 0 && instanceStack[instanceStack.length - 1] != proxy) {
