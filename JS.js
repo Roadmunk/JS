@@ -642,14 +642,26 @@ JS.class.initialFieldValue = function(instance, field) {
  */
 function makeSuperStackUpdaterProxy(method) {
 	return function proxy() {
+		var updatedStack = false;
+		var instanceStack;
 		if (proxy.superStack && proxy.superStack.has(this)) {
-			var instanceStack = proxy.superStack.get(this);
+			instanceStack = proxy.superStack.get(this);
 			if (instanceStack.length > 0 && instanceStack[instanceStack.length - 1] != proxy) {
+				updatedStack = true;
 				instanceStack.push(proxy);
 				proxy.superStack.set(this, instanceStack);
 			}
 		}
-		return method.apply(this, arguments);
+
+		try {
+			return method.apply(this, arguments);
+		}
+		finally {
+			if (updatedStack) {
+				instanceStack.pop();
+				proxy.superStack.set(this, instanceStack);
+			}
+		}
 	}
 }
 
