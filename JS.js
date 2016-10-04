@@ -488,6 +488,7 @@ function createMethods(definitions, destination) {
 					configurable : false
 				};
 				if (typeof method.get === "function") {
+					method.get = makeSuperStackUpdaterProxy(method.get);
 					method.get.methodType = "get";
 					method.get.methodName = name;
 					method.get.__class__  = this;
@@ -496,6 +497,7 @@ function createMethods(definitions, destination) {
 					descriptor.set        = function() {};	// add silent setter in case there's only a getter (will be overwritten by setter if there is one)
 				}
 				if (typeof method.set === "function") {
+					method.set = makeSuperStackUpdaterProxy(method.set);
 					method.set.methodType = "set";
 					method.set.methodName = name;
 					method.set.__class__  = this;
@@ -520,6 +522,7 @@ function createMethods(definitions, destination) {
 		}
 
 		if (typeof method == "function") {
+			method = makeSuperStackUpdaterProxy(method);
 			method.methodType = "method";
 			method.methodName = name;
 			method.__class__  = this;	// link each method to the class for which it is a method
@@ -544,12 +547,14 @@ function createGettersSetters(definitions, destination) {
 		// define non-value fields (ie. getters/setters)
 		if (typeof field.get === "function" || typeof field.set === "function") {
 			if (field.get) {
+				field.get = makeSuperStackUpdaterProxy(field.get);
 				field.get.methodType = "get";
 				field.get.methodName = name;
 				field.get.__class__  = this;
 				field.get.super      = makeSuperMethodProxy(field.get);
 			}
 			if (field.set) {
+				field.set = makeSuperStackUpdaterProxy(field.set);
 				field.set.methodType = "set";
 				field.set.methodName = name;
 				field.set.__class__  = this;
@@ -628,6 +633,44 @@ JS.class.initialFieldValue = function(instance, field) {
 
 	return undefined;
 };
+
+/**
+ * Makes a proxy function that, if nessecary, updates the method's `superStack` callstack for the instance invoking the method,
+ * pushing the current invocation onto the top of the stack. This is nessecary to allow for recursive/cyclic super calls.
+ *
+ * NOTE: a method must be proxied using this function *before* any properties are assigned to it.
+ * 
+ * @param  {function} method
+ * @return {function}
+ */
+function makeSuperStackUpdaterProxy(method) {
+	"use strict";
+	return function proxy() {
+		let updatedStack = false;	// flag indicating that we did modify the stack, and need to clean up afterwards
+		let instanceStack; 			// the super callstack for `this` instance, if any exists
+
+		// superStack is a map of instance to an array of callstack methods on that instance,
+		// and is initialized on the first invocation of `super` for each method (@see makeSuperMethodProxy())
+		if (proxy.superStack && proxy.superStack.has(this)) {
+			instanceStack = proxy.superStack.get(this);
+			if (instanceStack.length > 0 && instanceStack[instanceStack.length - 1] != proxy) {
+				updatedStack = true;
+				instanceStack.push(proxy);
+				proxy.superStack.set(this, instanceStack);
+			}
+		}
+
+		try {
+			return method.apply(this, arguments);
+		}
+		finally {
+			if (updatedStack) {
+				instanceStack.pop();
+				proxy.superStack.set(this, instanceStack);
+			}
+		}
+	}
+}
 
 /**
  * Returns the method that the given method overrides.

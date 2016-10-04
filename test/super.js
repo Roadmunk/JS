@@ -51,6 +51,10 @@ describe('super.js', function() {
 				if (childResult)
 					childResult = ' ' + childResult;
 				return childResult;
+			},
+			methodRecurse2 : function(recurseCount) {
+				let recursiveResult = recurseCount > 0 ? this.methodRecurse2(recurseCount - 1) + ' ' : '';
+				return `Base ${recursiveResult}${this.a}`;
 			}
 		}
 	});
@@ -70,6 +74,10 @@ describe('super.js', function() {
 			},
 			methodRecurse : function() {
 				return 'Sub-' + this.a + (this.methodRecurse.super.call(this) || '');
+			},
+			methodRecurse2 : function(recurseCount) {	// eslint-disable-line no-unused-vars
+				let superResult = this.methodRecurse2.super.apply(this, arguments);
+				return `Sub-${superResult}`;
 			}
 			// note that method2 is deliberately ommitted
 		}
@@ -114,6 +122,10 @@ describe('super.js', function() {
 			},
 			methodRecurse : function() {
 				return 'Subsub-' + this.methodRecurse.super.call(this);
+			},
+			methodRecurse2 : function(recurseCount) {	// eslint-disable-line no-unused-vars
+				let superResult = this.methodRecurse2.super.apply(this, arguments);
+				return `Subsub-${superResult}`;
 			}
 		}
 	});
@@ -168,6 +180,23 @@ describe('super.js', function() {
 
 		expect(parent.methodRecurse()).to.equal('Subsub-Sub-parent Subsub-Sub-child');
 	})
+
+	it('should support cyclical recursive super method calls', function() {
+		let s1 = new Subclass();
+		s1.a   = 'Foo';
+		expect(s1.methodRecurse2(0)).to.equal('Sub-Base Foo');
+		expect(s1.methodRecurse2(1)).to.equal('Sub-Base Sub-Base Foo Foo');
+		expect(s1.methodRecurse2(2)).to.equal('Sub-Base Sub-Base Sub-Base Foo Foo Foo');
+		expect(s1.methodRecurse2(3)).to.equal('Sub-Base Sub-Base Sub-Base Sub-Base Foo Foo Foo Foo');
+
+
+		let s2 = new Subsubclass();
+		s2.a   = 'Bar';
+		expect(s2.methodRecurse2(0)).to.equal('Subsub-Sub-Base Bar');
+		expect(s2.methodRecurse2(1)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Bar Bar');
+		expect(s2.methodRecurse2(2)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar');
+		expect(s2.methodRecurse2(3)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar Bar');
+	});
 
 	it.skip('performance test', function() {
 		var subsubclass = new Subsubclass();
