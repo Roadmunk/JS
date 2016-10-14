@@ -1,11 +1,15 @@
 'use strict'; // $super needs to work for classes that are declared in strict mode
 
-var JS     = require('../JS');
-var expect = require('chai').expect;
+const JS     = require('../JS');
+const expect = require('chai').expect;
 
 describe('super.js', function() {
 
-	var BaseClass = JS.class('BaseClass', {
+	const BaseClass   = JS.class('BaseClass');
+	const Subclass    = JS.class('Subclass');
+	const Subsubclass = JS.class('Subsubclass');
+
+	JS.class(BaseClass, {
 		fields : {
 			a : '',
 			b : 1,
@@ -47,19 +51,19 @@ describe('super.js', function() {
 				throw new Error();
 			},
 			methodRecurse : function() {
-				var childResult = this.child ? this.child.methodRecurse() : null;
+				let childResult = this.child ? this.child.methodRecurse() : null;
 				if (childResult)
 					childResult = ' ' + childResult;
 				return childResult;
 			},
 			methodRecurse2 : function(recurseCount) {
-				let recursiveResult = recurseCount > 0 ? this.methodRecurse2(recurseCount - 1) + ' ' : '';
+				const recursiveResult = recurseCount > 0 ? this.methodRecurse2(recurseCount - 1) + ' ' : '';
 				return `Base ${recursiveResult}${this.a}`;
 			}
 		}
 	});
 
-	var Subclass = JS.class('Subclass', {
+	JS.class(Subclass, {
 		inherits : BaseClass,
 		fields : {
 			c : Object
@@ -76,14 +80,14 @@ describe('super.js', function() {
 				return 'Sub-' + this.a + (this.methodRecurse.super.call(this) || '');
 			},
 			methodRecurse2 : function(recurseCount) {	// eslint-disable-line no-unused-vars
-				let superResult = this.methodRecurse2.super.apply(this, arguments);
+				const superResult = this.methodRecurse2.super.apply(this, arguments);
 				return `Sub-${superResult}`;
 			}
 			// note that method2 is deliberately ommitted
 		}
 	});
 
-	var Subsubclass = JS.class('Subsubclass', {
+	JS.class(Subsubclass, {
 		inherits : Subclass,
 		fields : {
 			d : {
@@ -124,14 +128,14 @@ describe('super.js', function() {
 				return 'Subsub-' + this.methodRecurse.super.call(this);
 			},
 			methodRecurse2 : function(recurseCount) {	// eslint-disable-line no-unused-vars
-				let superResult = this.methodRecurse2.super.apply(this, arguments);
+				const superResult = this.methodRecurse2.super.apply(this, arguments);
 				return `Subsub-${superResult}`;
 			}
 		}
 	});
 
 	it('should allow calls to methods in ancestor classes', function() {
-		var subsubclass = new Subsubclass();
+		const subsubclass = new Subsubclass();
 
 		subsubclass.method('testing');
 		expect(subsubclass.a).to.equal('testing BaseClass');
@@ -140,15 +144,15 @@ describe('super.js', function() {
 	});
 
 	it('should allow super calls on non-this instances', function() {
-		var s1 = new Subsubclass();
-		var s2 = new Subsubclass();
+		const s1 = new Subsubclass();
+		const s2 = new Subsubclass();
 		s1.method3(s2, "testing");
 		expect(s1.a).to.equal('BaseClass constructor');
 		expect(s2.a).to.equal('testing BaseClass.method3');
 	});
 
 	it('should allow super calls to get/set fields in ancestor classes', function() {
-		var s1 = new Subsubclass();
+		const s1 = new Subsubclass();
 
 		s1.a = 'test';
 		expect(s1.d).to.equal('test BaseClass Subsubclass');
@@ -157,7 +161,7 @@ describe('super.js', function() {
 	});
 
 	it('should allow super calls to get/set methods in ancestor classes', function() {
-		var s1 = new Subsubclass();
+		const s1 = new Subsubclass();
 
 		s1.a = 'test';
 		expect(s1.method4).to.equal('test BaseClass Subsubclass');
@@ -166,15 +170,15 @@ describe('super.js', function() {
 	});
 
 	it('should propogate exceptions through super', function() {
-		var s1 = new Subsubclass();
+		const s1 = new Subsubclass();
 		expect(s1.throwMethod).to.throw;
 	});
 
 	it('should support super calling the same method on another instance', function() {
-		var parent = new Subsubclass();
+		const parent = new Subsubclass();
 		parent.a = 'parent';
 
-		var child = new Subsubclass();
+		const child = new Subsubclass();
 		child.a = 'child';
 		parent.child = child;
 
@@ -182,7 +186,7 @@ describe('super.js', function() {
 	})
 
 	it('should support cyclical recursive super method calls', function() {
-		let s1 = new Subclass();
+		const s1 = new Subclass();
 		s1.a   = 'Foo';
 		expect(s1.methodRecurse2(0)).to.equal('Sub-Base Foo');
 		expect(s1.methodRecurse2(1)).to.equal('Sub-Base Sub-Base Foo Foo');
@@ -190,7 +194,7 @@ describe('super.js', function() {
 		expect(s1.methodRecurse2(3)).to.equal('Sub-Base Sub-Base Sub-Base Sub-Base Foo Foo Foo Foo');
 
 
-		let s2 = new Subsubclass();
+		const s2 = new Subsubclass();
 		s2.a   = 'Bar';
 		expect(s2.methodRecurse2(0)).to.equal('Subsub-Sub-Base Bar');
 		expect(s2.methodRecurse2(1)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Bar Bar');
@@ -199,12 +203,12 @@ describe('super.js', function() {
 	});
 
 	it.skip('performance test', function() {
-		var subsubclass = new Subsubclass();
+		const subsubclass = new Subsubclass();
 
-		var start = new Date();
+		const start = new Date();
 		console.profile();
 
-		for (var a=0; a<1000000; a++)
+		for (let a = 0; a < 1000000; a++)
 			subsubclass.method('testing');
 
 		console.profileEnd();

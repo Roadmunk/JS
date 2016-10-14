@@ -67,7 +67,7 @@ describe('method regions', function() {
 	});
 
 	it('should allow methods to be enclosed in named regions', function() {
-		let foo = new Foo();
+		const foo = new Foo();
 		expect(foo.method0()).to.equal(0);
 		expect(foo.method1()).to.equal(1);
 		expect(foo.method2()).to.equal(2);
@@ -75,16 +75,16 @@ describe('method regions', function() {
 	});
 
 	it('should allow mixing in methods enclosed in a named region', function() {
-		let bar2 = new Bar2();
+		const bar2 = new Bar2();
 		expect(bar2.method2()).to.equal(2);
 	});
 
 	it('should not affect the overrideability of a method', function() {
-		let bar = new Bar();
+		const bar = new Bar();
 		expect(bar.method0()).to.equal(-1);
 		expect(bar.method1()).to.equal(11);
 
-		let bar4 = new Bar4();
+		const bar4 = new Bar4();
 		expect(bar4.method0()).to.equal(0);
 		expect(bar4.method1()).to.equal(1);
 	});
@@ -96,7 +96,7 @@ describe('method regions', function() {
 
 	// it would be nice if this worked, but it is easy enough to work around for now
 	it.skip('should work when mixing in a method and using the same named region', function() {
-		let bar2 = new Bar2();
+		const bar2 = new Bar2();
 		expect(bar2.method0()).to.equal(-1);
 		expect(bar2.method1()).to.equal(11);
 		expect(bar2.method2()).to.equal(2);

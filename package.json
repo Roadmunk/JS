@@ -11,12 +11,14 @@
 	},
 
 	"devDependencies": {
-		"chance"        : "1.x.x",
-		"mocha"         : "2.x.x",
-		"chai"          : "3.x.x",
-		"chai-datetime" : "1.x.x"
+		"chance"                 : "1.x.x",
+		"mocha"                  : "2.x.x",
+		"chai"                   : "3.x.x",
+		"chai-datetime"          : "1.x.x",
+		"eslint-config-roadmunk" : "roadmunk/eslint-config-roadmunk"
 	},
+
 	"engines" : {
-		"node" : ">=0.12"
+		"node" : ">=4"
 	}
 }

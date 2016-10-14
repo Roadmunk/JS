@@ -1,11 +1,11 @@
 'use strict';
 
-var JS     = require('../JS');
-var expect = require('chai').expect;
+const JS     = require('../JS');
+const expect = require('chai').expect;
 
 describe('abstract.js', function() {
 
-	var AbstractClass1 =
+	const AbstractClass1 =
 	JS.class('AbstractClass1', {
 		methods : {
 			method1 : {
@@ -14,7 +14,7 @@ describe('abstract.js', function() {
 		}
 	});
 
-	var AbstractClass2 =
+	const AbstractClass2 =
 	JS.class('AbstractClass2', {
 		inherits : AbstractClass1,
 
@@ -23,7 +23,7 @@ describe('abstract.js', function() {
 		}
 	});
 
-	var AbstractClass3 =
+	const AbstractClass3 =
 	JS.class('AbstractClass3', {
 		inherits : AbstractClass2,
 
@@ -32,7 +32,7 @@ describe('abstract.js', function() {
 		}
 	});
 
-	var ConcreteClass =
+	const ConcreteClass =
 	JS.class('ConcreteClass', {
 		inherits : AbstractClass2,
 
@@ -54,13 +54,13 @@ describe('abstract.js', function() {
 	});
 
 	it('should not allow classes with one or more abstract methods to be instantiated', function() {
-		expect(function() { var a = new AbstractClass1(); }).to.throw();
-		expect(function() { var a = new AbstractClass2(); }).to.throw();
-		expect(function() { var a = new AbstractClass3(); }).to.throw();
+		expect(function() { new AbstractClass1(); }).to.throw();
+		expect(function() { new AbstractClass2(); }).to.throw();
+		expect(function() { new AbstractClass3(); }).to.throw();
 	});
 
 	it('should allow the creation of new instances of derived classes that have implemented all abstract methods', function() {
-		var a = new ConcreteClass();
+		const a = new ConcreteClass();
 		expect(a.method1()).to.equal(true);
 		expect(a.method2()).to.equal(false);
 	});

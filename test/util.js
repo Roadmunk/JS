@@ -1,17 +1,17 @@
 'use strict';
 
-var JS     = require('../JS');
-var expect = require('chai').expect;
+const JS     = require('../JS');
+const expect = require('chai').expect;
 
 describe('util.js', function() {
 
 describe('callback', function() {
 
-	var output;
+	let output;
 
-	var callback1 = function(arg1) { output = arg1; };
-	var callback2 = function(arg1, arg2, arg3) { output = arg3; };
-	var callback3 = function(arg1) { output = arg1; throw 'adsf' };
+	const callback1 = function(arg1) { output = arg1; };
+	const callback2 = function(arg1, arg2, arg3) { output = arg3; };
+	const callback3 = function(arg1) { output = arg1; throw 'adsf' };
 
 	beforeEach(function() {
 		output = null;
@@ -24,7 +24,7 @@ describe('callback', function() {
 	});
 
 	it('should allow callbacks with arguments', function() {
-		var obj1 = {};
+		const obj1 = {};
 
 		JS.util.callback(callback2, [1, "string", obj1]);
 		expect(output).to.equal(obj1);
@@ -48,14 +48,14 @@ describe('callback', function() {
 
 describe('createFactory', function() {
 	it('should create factories for the given type', function() {
-		var dateFactory = JS.util.createFactory(Date);
+		const dateFactory = JS.util.createFactory(Date);
 		expect(dateFactory() instanceof Date).to.equal(true);
 	});
 
 	it('should pass any parameters to the constructor', function() {
-		var dateFactory = JS.util.createFactory(Date);
+		const dateFactory = JS.util.createFactory(Date);
 
-		var date = dateFactory('Jan 1, 2014');
+		const date = dateFactory('Jan 1, 2014');
 
 		expect(date instanceof Date).to.equal(true);
 		expect(date.getMonth()).to.equal(0);
@@ -66,22 +66,22 @@ describe('createFactory', function() {
 
 describe('defaults', function() {
 	it('should create default values when missing', function() {
-		var result = JS.util.defaults(undefined, { a : 5, b : 'asdf'});
+		const result = JS.util.defaults(undefined, { a : 5, b : 'asdf'});
 		expect(result).not.to.be.undefined;
 		expect(result.a).to.equal(5);
 		expect(result.b).to.equal('asdf');
 	});
 
 	it('should not override values when provided', function() {
-		var result = { a : 6 };
+		let result = { a : 6 };
 		result = JS.util.defaults(result, { a : 5, b : 'asdf'});
 		expect(result.a).to.equal(6);
 		expect(result.b).to.equal('asdf');
 	});
 
 	it('should not modify the options parameter', function() {
-		var result  = { a : 6 };
-		var result2 = JS.util.defaults(result, { a : 5, b : 'asdf'});
+		const result  = { a : 6 };
+		const result2 = JS.util.defaults(result, { a : 5, b : 'asdf'});
 		expect(result).to.not.have.property('b');
 		expect(result2).to.have.property('b');
 	});
@@ -89,10 +89,10 @@ describe('defaults', function() {
 
 describe('ensureArray', function() {
 	it('should return the value if already an array', function() {
-		var array = [];
+		let array = [];
 		expect(JS.util.ensureArray(array)).to.deep.equal(array);
 
-		array = [1,2,3];
+		array = [1, 2, 3];
 		expect(JS.util.ensureArray(array)).to.deep.equal(array);
 	});
 
@@ -101,7 +101,7 @@ describe('ensureArray', function() {
 		expect(JS.util.ensureArray('asdf')).to.deep.equal(['asdf']);
 		expect(JS.util.ensureArray(1234)).to.deep.equal([1234]);
 
-		var date = new Date();
+		const date = new Date();
 		expect(JS.util.ensureArray(date)).to.deep.equal([date]);
 	});
 
@@ -115,8 +115,8 @@ describe('ensureArray', function() {
 
 describe('proxy', function() {
 	it('should override given method and pass in the old method into the overriding function', function() {
-		var foo = '';
-		var testObject = {
+		let foo = '';
+		const testObject = {
 			func1 : function(param1) {
 				foo += ',' + param1;
 				return 5;
@@ -128,7 +128,7 @@ describe('proxy', function() {
 			return oldFunc(param1);
 		});
 
-		var a = testObject.func1('test');
+		const a = testObject.func1('test');
 
 		expect(foo).to.equal('new,test');
 		expect(a).to.equal(5);
