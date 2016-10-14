@@ -49,11 +49,17 @@ Object.setPrototypeOf = Object.setPrototypeOf || function (obj, proto) {
 JS.class = function(className, originalProperties) {
 	var clazz, fieldName;
 
+	// full definition form with className inherited from parent class
+	if (typeof className === "object" && originalProperties === undefined && className.inherits) {
+		originalProperties = className;
+		className = originalProperties.inherits.__className__;
+	}
+
 	if (typeof className == "string") {
 		var shortClassName = className.match(/[a-zA-Z0-9_]*$/)[0];	// take the last alphanum word since it must be a Javascript name
 
 		// using eval here so that the className will be used in the function definition (shows in debuggers and such which makes debugging easier)
-		eval('clazz = function ' + shortClassName + '() { return createFunction.call(this, arguments); };');
+		eval('clazz = function ' + shortClassName + '() { return createFunction.call(this, arguments); };');	//eslint-disable-line no-eval
 
 		clazz.__className__ = className;
 
@@ -61,7 +67,7 @@ JS.class = function(className, originalProperties) {
 		if (originalProperties === undefined)
 			return clazz;
 	}
-	else if (typeof className == "function") {
+	else if (typeof className === "function") {
 		clazz     = className;
 		className = clazz.__className__;
 	}
@@ -150,9 +156,10 @@ function processFields(clazz) {
 	do {
 		unprocessedFields = {};
 
-		for (fieldName in properties.fields)
+		for (fieldName in properties.fields) {
 			if (properties.fields[fieldName] != processedFields[fieldName])
 				unprocessedFields[fieldName] = properties.fields[fieldName];
+		}
 
 		// normalize field definitions so that any fieldDefinition event handlers can rely on a consistent field definition
 		for (fieldName in unprocessedFields)
@@ -540,9 +547,9 @@ function createMethods(definitions, destination) {
  */
 function createGettersSetters(definitions, destination) {
 	"use strict";
-	for (let name in definitions) {
+	for (const name in definitions) {
 		// normalize again just to be sure
-		let field = definitions[name] = normalizeField(definitions[name]);
+		const field = definitions[name] = normalizeField(definitions[name]);
 
 		// define non-value fields (ie. getters/setters)
 		if (typeof field.get === "function" || typeof field.set === "function") {
@@ -639,7 +646,7 @@ JS.class.initialFieldValue = function(instance, field) {
  * pushing the current invocation onto the top of the stack. This is nessecary to allow for recursive/cyclic super calls.
  *
  * NOTE: a method must be proxied using this function *before* any properties are assigned to it.
- * 
+ *
  * @param  {function} method
  * @return {function}
  */

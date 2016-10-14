@@ -210,10 +210,18 @@ describe('a class', function() {
 	});
 
 	it('should allow for class names with non-alpha characters', function() {
-		var ClassWithDotsInName = JS.class('Class.With.Dots.In.Name', {});
+		const ClassWithDotsInName = JS.class('Class.With.Dots.In.Name', {});
+		expect(ClassWithDotsInName.__className__).to.equal('Class.With.Dots.In.Name');
+	});
 
-		var a = new ClassWithDotsInName();
-		expect(a.constructor.__className__).to.equal('Class.With.Dots.In.Name');
+	it('should inherit className from parent class if none specified', function() {
+		const Bar1 = JS.class('Bar', {});
+		const Bar2 = JS.class({ inherits : Bar1 });
+		const Bar3 = JS.class({ inherits : Bar2 });
+
+		expect(Bar1.__className__).to.equal('Bar');
+		expect(Bar2.__className__).to.equal('Bar');
+		expect(Bar3.__className__).to.equal('Bar');
 	});
 
 	it('should use primitive values for primitive types', function() {
@@ -251,7 +259,7 @@ describe('a class', function() {
 			}
 		});
 
-		let myClass = new MyClass();
+		const myClass = new MyClass();
 
 		myClass.getterField = 10;
 		myClass.getterMethod = 6;
