@@ -653,29 +653,31 @@ JS.class.initialFieldValue = function(instance, field) {
 function makeSuperStackUpdaterProxy(method) {
 	"use strict";
 	return function proxy() {
-		let updatedStack = false;	// flag indicating that we did modify the stack, and need to clean up afterwards
-		let instanceStack; 			// the super callstack for `this` instance, if any exists
+		/* Note: superStack is a map of instance to an array of callstack methods on that instance,
+		 * and is initialized on the first invocation of `super` for each method (@see makeSuperMethodProxy())
+		 */
 
-		// superStack is a map of instance to an array of callstack methods on that instance,
-		// and is initialized on the first invocation of `super` for each method (@see makeSuperMethodProxy())
-		if (proxy.superStack && proxy.superStack.has(this)) {
-			instanceStack = proxy.superStack.get(this);
-			if (instanceStack.length > 0 && instanceStack[instanceStack.length - 1] != proxy) {
-				updatedStack = true;
-				instanceStack.push(proxy);
-				proxy.superStack.set(this, instanceStack);
-			}
+		let updatedStack    = false;	// flag indicating that we did modify the stack, and need to clean up afterwards
+		const instanceStack = proxy.superStack ? proxy.superStack.get(this) : null;	// the super callstack for `this` instance, if any exists
+
+		if (instanceStack && instanceStack.length && instanceStack[instanceStack.length - 1] != proxy) {
+			updatedStack = true;
+			instanceStack.push(proxy);
+			proxy.superStack.set(this, instanceStack);
 		}
 
-		try {
-			return method.apply(this, arguments);
-		}
-		finally {
-			if (updatedStack) {
-				instanceStack.pop();
-				proxy.superStack.set(this, instanceStack);
-			}
-		}
+		// prevent leaking arguments to allow for optimization
+		const len = arguments.length;
+		const args = new Array(len);
+		for (let i = 0; i < len; i++)
+			args[i] = arguments[i];
+
+		// run the try-finally as a seperate function to allow for optimization
+		const self = this;
+		return tryFinally(
+			function() { return method.apply(self, args); },
+			updatedStack ? function() { instanceStack.pop(); proxy.superStack.set(self, instanceStack); } : null
+		);
 	}
 }
 
@@ -1048,5 +1050,21 @@ function clone(obj) {
 	return result;
 }
 JS.util.clone = clone;
+
+/**
+ * Helper function that runs a try-finally in a seperate function to allow compiler optimization
+ * @param  {function} tryBlock       A function to be run in the `try` block
+ * @param  {function} [finallyBlock] A function to be run in the `finally` block
+ * @return {*}                       return value of the `tryBlock`
+ */
+function tryFinally(tryBlock, finallyBlock) {
+	try {
+		return tryBlock();
+	}
+	finally {
+		if (finallyBlock)
+			finallyBlock();
+	}
+}
 
 }); // end of module
