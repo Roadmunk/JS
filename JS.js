@@ -652,6 +652,10 @@ JS.class.initialFieldValue = function(instance, field) {
  */
 function makeSuperStackUpdaterProxy(method) {
 	"use strict";
+
+	if (method.toString().indexOf('.super.') === -1)
+		return method;
+
 	return function proxy() {
 		/* Note: superStack is a map of instance to an array of callstack methods on that instance,
 		 * and is initialized on the first invocation of `super` for each method (@see makeSuperMethodProxy())
