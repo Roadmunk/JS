@@ -653,6 +653,7 @@ JS.class.initialFieldValue = function(instance, field) {
 function makeSuperStackUpdaterProxy(method) {
 	"use strict";
 
+	// check if the method doesn't even contain a call to it's super method
 	if (method.toString().indexOf('.super.') === -1)
 		return method;
 
