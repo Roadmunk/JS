@@ -425,7 +425,7 @@ function createFunctionHelper(clazz, args) {
 		if (!constructingThis || !recursiveCall) {
 			// check for abstract class only if this is the top-level call (ie. not a base-class constructor call)
 			if (constructingThis && BaseClass.isAbstract.call(clazz))
-				throw new Error("cannot instantiate abstract class: " + this.constructor.__className__);
+				throw new Error(`cannot instantiate abstract class: ${this.constructor.__className__} (method: ${BaseClass.abstractMethodName.call(clazz)})`);
 
 			// add instance fields
 			createFields.call(this, clazz.properties.fields);
@@ -876,6 +876,7 @@ JS.class(BaseClass, {
 						for (var methodName in currentClass.properties.methods) {
 							if (currentClass.properties.methods[methodName].abstract && implementedMethods[methodName] === undefined) {
 								this.__abstract = true;
+								this.__abstractMethodName = methodName;
 								break;
 							}
 							implementedMethods[methodName] = true;
@@ -888,6 +889,16 @@ JS.class(BaseClass, {
 				}
 
 				return this.__abstract;
+			},
+
+			/**
+			 * If this class is an abstract class, then this method returns the name of
+			 * an un-implemented method.  This is useful for debugging.
+			 *
+			 * @returns {String}
+			 */
+			abstractMethodName : function() {
+				return this.__abstractMethodName;
 			},
 
 			/**

@@ -64,5 +64,9 @@ describe('abstract.js', function() {
 		expect(a.method1()).to.equal(true);
 		expect(a.method2()).to.equal(false);
 	});
+
+	it('should report name of astract method when preventing instantiating abstract class', function() {
+		expect(function() { new AbstractClass1(); }).to.throw().and.to.have.property('message').include('method1');
+	});
 });
 
