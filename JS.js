@@ -1,4 +1,4 @@
-if (typeof define !== 'function') { var define = require('amdefine')(module) }
+if (typeof define !== 'function')  var define = require('amdefine')(module)
 
 define(function(require, exports, module) {
 
@@ -450,10 +450,7 @@ function createFunctionHelper(clazz, args) {
 			throw new Error("can only cast to a base class");
 
 		var result = new clazz();
-
-		result.forEachField(function(fieldName) {
-			result[fieldName] = source[fieldName];
-		});
+		createFields.call(result, clazz.properties.fields, source);
 
 		return result;
 	}
@@ -582,25 +579,47 @@ function createGettersSetters(definitions, destination) {
 /**
  * Helper function that adds the given fields to this object.
  * Expects to be called in the context of the class object.
+ * @param {Object} fields - field definitions with keys being the field names and values being the field properties
+ * @param {Object} [initialValues] - takes initial values for the fields from this object if provided
  */
-function createFields(fields) {
-	var initialized = {};
-	var self = this;
+function createFields(fields, initialValues) {
+	const sortedFields = getSortedFields(fields);
+	const len          = sortedFields.length;
 
-	function createField(fieldName, field) {
-		if (initialized[fieldName]) return;
+	for (var a = 0; a < len; a++) {
+		const field      = sortedFields[a];
+		this[field.name] = initialValues ? initialValues[field.name] : JS.class.initialFieldValue(this, field.def);
+	}
+}
 
-		// check for initialization depedencies (when field init needs to have other fields initialized first)
-		ensureArray(field.initDependencies).forEach(function(fieldName) {
-			createField(fieldName, fields[fieldName]);
-		});
+/**
+ * Helper function that returns an array of this class' field definitions in inisorted order.
+ * @param  {[type]} fields [description]
+ * @return {[type]}        [description]
+ */
+function getSortedFields(fields) {
+	// optimize by building an array of fields sorted in initialization order
+	if (!fields.hasOwnProperty('___fieldsSortedInInitializationOrder')) {
+		var sortedFields = [];
 
-		initialized[fieldName] = true;
-		self[fieldName] = JS.class.initialFieldValue(self, field);
+		for (var fieldName in fields)
+			processField(fieldName, sortedFields);
+
+		fields.___fieldsSortedInInitializationOrder = sortedFields;
 	}
 
-	for (var fieldName in fields)
-		createField(fieldName, fields[fieldName]);
+	return fields.___fieldsSortedInInitializationOrder;
+
+	function processField(fieldName, sortedFields) {
+		if (sortedFields.some(field => field.name === fieldName)) return;
+
+		// check for initialization depedencies (when field init needs to have other fields initialized first)
+		ensureArray(fields[fieldName].initDependencies).forEach(field => processField(field, sortedFields));
+		sortedFields.push({
+			name : fieldName,
+			def  : fields[fieldName]
+		});
+	}
 }
 
 
@@ -612,7 +631,7 @@ function createFields(fields) {
  */
 JS.class.initialFieldValue = function(instance, field) {
 	if (typeof field == "string")
-		field = (instance.constructor || instance).properties.fields[field];
+		field = (instance.constructor || instance).getFieldProperties(field);
 
 	// check if this is a getter field (with no setter thus not writable) then do nothing
 	if (typeof field.get == "function" && typeof field.set == "undefined")
@@ -908,13 +927,13 @@ JS.class(BaseClass, {
 			 *           {Object} the field definition properties (meta data)
 			 */
 			forEachField : function (callback) {
-				var fields    = this.properties.fields;
-				var fieldKeys = Object.keys(fields);
-				var index     = fieldKeys.length;
-				while (index--) {
-					var fieldKey = fieldKeys[index];
-					if (callback(fieldKey, fields[fieldKey]) === false)
+				var fields    = getSortedFields(this.properties.fields);
+				var length    = fields.length;
+				var index     = 0;
+				while (index < length) {
+					if (callback(fields[index].name, fields[index].def) === false)
 						return;
+					index++;
 				}
 			},
 
@@ -958,11 +977,7 @@ JS.util.callback = function callback(func, args, context) {
 			func.apply(context, args);
 	}
 	catch (e) {
-		var msg = e.stack || e.message || e;
-		if (console.error)
-			console.error(msg);
-		else
-			console.log(msg);
+		(console.error || console.log)(e.stack || e.message || e);
 	}
 
 	if (func && typeof func != "function")
