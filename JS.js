@@ -583,19 +583,17 @@ function createGettersSetters(definitions, destination) {
  * @param {Object} [initialValues] - takes initial values for the fields from this object if provided
  */
 function createFields(fields, initialValues) {
-	const sortedFields = getSortedFields(fields);
-	const len          = sortedFields.length;
+	const sortedFieldNames = getSortedFields(fields);
+	const len              = sortedFieldNames.length;
 
 	for (var a = 0; a < len; a++) {
-		const field      = sortedFields[a];
-		this[field.name] = initialValues ? initialValues[field.name] : JS.class.initialFieldValue(this, field.def);
+		var fieldName   = sortedFieldNames[a];
+		this[fieldName] = initialValues ? initialValues[fieldName] : JS.class.initialFieldValue(this, fields[fieldName]);
 	}
 }
 
 /**
- * Helper function that returns an array of this class' field definitions in inisorted order.
- * @param  {[type]} fields [description]
- * @return {[type]}        [description]
+ * Helper function that returns an array of this class' field names in init sorted order.
  */
 function getSortedFields(fields) {
 	// optimize by building an array of fields sorted in initialization order
@@ -605,20 +603,20 @@ function getSortedFields(fields) {
 		for (var fieldName in fields)
 			processField(fieldName, sortedFields);
 
-		fields.___fieldsSortedInInitializationOrder = sortedFields;
+		Object.defineProperty(fields, '___fieldsSortedInInitializationOrder', {
+			enumerable : false,
+			value      : sortedFields
+		});
 	}
 
 	return fields.___fieldsSortedInInitializationOrder;
 
 	function processField(fieldName, sortedFields) {
-		if (sortedFields.some(field => field.name === fieldName)) return;
+		if (sortedFields.includes(fieldName)) return;
 
 		// check for initialization depedencies (when field init needs to have other fields initialized first)
-		ensureArray(fields[fieldName].initDependencies).forEach(field => processField(field, sortedFields));
-		sortedFields.push({
-			name : fieldName,
-			def  : fields[fieldName]
-		});
+		ensureArray(fields[fieldName].initDependencies).forEach(fieldName => processField(fieldName, sortedFields));
+		sortedFields.push(fieldName);
 	}
 }
 
@@ -927,11 +925,12 @@ JS.class(BaseClass, {
 			 *           {Object} the field definition properties (meta data)
 			 */
 			forEachField : function (callback) {
-				var fields    = getSortedFields(this.properties.fields);
-				var length    = fields.length;
-				var index     = 0;
+				var fields     = this.properties.fields;
+				var fieldNames = getSortedFields(fields);
+				var length     = fieldNames.length;
+				var index      = 0;
 				while (index < length) {
-					if (callback(fields[index].name, fields[index].def) === false)
+					if (callback(fieldNames[index], fields[fieldNames[index]]) === false)
 						return;
 					index++;
 				}
