@@ -625,7 +625,7 @@ function processField(fields, fieldName, sortedFields, visitedFields) {
 
 	// check for any cycles in `initDependencies` of the fields
 	if (!visitedFields) visitedFields = new Set();
-	if (visitedFields.has(fieldName)) throw new Error(`initDependency cycle for '${fieldName}'`);
+	if (visitedFields.has(fieldName)) throw new Error(`initDependencies cycle for '${fieldName}'`);
 	visitedFields.add(fieldName);
 
 	// check for initialization dependencies (when field init needs to have other fields initialized first)
