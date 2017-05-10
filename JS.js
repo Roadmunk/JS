@@ -583,7 +583,7 @@ function createGettersSetters(definitions, destination) {
  * @param {Object} [initialValues] - takes initial values for the fields from this object if provided
  */
 function createFields(fields, initialValues) {
-	const sortedFieldNames = getSortedFields(fields);
+	const sortedFieldNames = getSortedFieldNames(fields);
 	const len              = sortedFieldNames.length;
 
 	for (var a = 0; a < len; a++) {
@@ -593,15 +593,16 @@ function createFields(fields, initialValues) {
 }
 
 /**
- * Helper function that returns an array of this class' field names in init sorted order.
+ * Helper function that returns an array of this class' field names, sorted in their initialization order
+ * (i.e. fields with `initDependencies` appear in the array after all of their dependencies)
  */
-function getSortedFields(fields) {
-	// optimize by building an array of fields sorted in initialization order
+function getSortedFieldNames(fields) {
+	// optimize by memoizing the result and attaching it to `fields`
 	if (!fields.hasOwnProperty('___fieldsSortedInInitializationOrder')) {
 		var sortedFields = [];
 
 		for (var fieldName in fields)
-			processField(fieldName, sortedFields);
+			processField(fields, fieldName, sortedFields);
 
 		Object.defineProperty(fields, '___fieldsSortedInInitializationOrder', {
 			enumerable : false,
@@ -610,14 +611,29 @@ function getSortedFields(fields) {
 	}
 
 	return fields.___fieldsSortedInInitializationOrder;
+}
 
-	function processField(fieldName, sortedFields) {
-		if (sortedFields.includes(fieldName)) return;
+/**
+ * Helper function for `getSortedFieldNames` to process a field and recursively process the field's init dependencies
+ * @param  {Object}      fields          All field definitions
+ * @param  {String}      fieldName       The name of the specific field to process
+ * @param  {String[]}    sortedFields    Array of already processed fields, which this field should be added to once processed
+ * @param  {Set<String>} [visitedFields] The field names which have already been visited, in the current recursive callstack.
+ */
+function processField(fields, fieldName, sortedFields, visitedFields) {
+	if (sortedFields.includes(fieldName)) return;
 
-		// check for initialization depedencies (when field init needs to have other fields initialized first)
-		ensureArray(fields[fieldName].initDependencies).forEach(fieldName => processField(fieldName, sortedFields));
-		sortedFields.push(fieldName);
-	}
+	// check for any cycles in `initDependencies` of the fields
+	if (!visitedFields) visitedFields = new Set();
+	if (visitedFields.has(fieldName)) throw new Error(`initDependency cycle for '${fieldName}'`);
+	visitedFields.add(fieldName);
+
+	// check for initialization dependencies (when field init needs to have other fields initialized first)
+	var field = fields[fieldName];
+	if (field.initDependencies)
+		ensureArray(fields[fieldName].initDependencies).forEach(fieldName => processField(fields, fieldName, sortedFields, visitedFields));
+
+	sortedFields.push(fieldName);
 }
 
 
@@ -926,7 +942,7 @@ JS.class(BaseClass, {
 			 */
 			forEachField : function (callback) {
 				var fields     = this.properties.fields;
-				var fieldNames = getSortedFields(fields);
+				var fieldNames = getSortedFieldNames(fields);
 				var length     = fieldNames.length;
 				var index      = 0;
 				while (index < length) {
