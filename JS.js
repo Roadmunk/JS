@@ -257,6 +257,10 @@ function extendPropertiesWithClass(properties, clazz, options) {
 		return;
 	}
 
+	// check if mixin has a constructor which currently won't get run (atleast log a warning)
+	if (options.isMixin && getConstructor(clazz.properties, clazz.__className__))
+		console.warn("mixin class has a constructor but it won't get run: " + clazz.__className__);
+
 	// 1. add from any base classes
 	extendPropertiesWithClass(properties, classProperties.inherits, {
 		isMixin     : options.isMixin,
