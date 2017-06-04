@@ -688,18 +688,20 @@ function makeSuperStackUpdaterProxy(method) {
 			proxy.superStack.set(this, instanceStack);
 		}
 
-		// prevent leaking arguments to allow for optimization
-		const len = arguments.length;
-		const args = new Array(len);
-		for (let i = 0; i < len; i++)
-			args[i] = arguments[i];
+		if (updatedStack) {
+			// prevent leaking arguments to allow for optimization
+			const len = arguments.length;
+			const args = new Array(len);
+			for (let i = 0; i < len; i++)
+				args[i] = arguments[i];
 
-		// run the try-finally as a seperate function to allow for optimization
-		const self = this;
-		return tryFinally(
-			function() { return method.apply(self, args); },
-			updatedStack ? function() { instanceStack.pop(); proxy.superStack.set(self, instanceStack); } : null
-		);
+			return tryFinally(
+				() => method.apply(this, args),
+				() => { instanceStack.pop(); proxy.superStack.set(this, instanceStack); }
+			);
+		}
+
+		return method.apply(this, arguments);
 	}
 }
 
@@ -1023,7 +1025,6 @@ JS.util.createFactory = function(constructor) {
  * @return {Array} if value is already an Array, value; otherwise a new Array containing value as it's only element
  */
 function ensureArray(value) {
-	if (arguments.length === 0) return [];
 	if (value === undefined || value === null) return [];
 	if (Array.isArray(value)) return value;
 	return [ value ];
@@ -1050,10 +1051,12 @@ JS.util.proxy = function(object, property, newFunction) {
 		throw new Error("newFunction must be a function: " + newFunction);
 
 	object[property] = function() {
-		var args = [ oldFunc ];
+		const len = arguments.length;
+		var args  = new Array(len + 1)
+		args[0]   = oldFunc;
 
-		for (var a = 0; a < arguments.length; a++)
-			args.push(arguments[a]);
+		for (var a = 0; a < len; a++)
+			args[a + 1] = arguments[a];
 
 		return newFunction.apply(this, args);
 	};
@@ -1083,8 +1086,8 @@ JS.util.clone = clone;
 
 /**
  * Helper function that runs a try-finally in a seperate function to allow compiler optimization
- * @param  {function} tryBlock       A function to be run in the `try` block
- * @param  {function} [finallyBlock] A function to be run in the `finally` block
+ * @param  {function} tryBlock     A function to be run in the `try` block
+ * @param  {function} finallyBlock A function to be run in the `finally` block
  * @return {*}                       return value of the `tryBlock`
  */
 function tryFinally(tryBlock, finallyBlock) {
@@ -1092,8 +1095,7 @@ function tryFinally(tryBlock, finallyBlock) {
 		return tryBlock();
 	}
 	finally {
-		if (finallyBlock)
-			finallyBlock();
+		finallyBlock();
 	}
 }
 
