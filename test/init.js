@@ -81,4 +81,55 @@ describe('init.js', function() {
 		var foo = new Foo();
 		expect(foo.e).to.equal("primitive constant");
 	});
+
+	it('should throw an error when a dependency cycle exists', function() {
+		var Cycle1 = JS.class('Cycle1', {
+			fields : {
+				a : {
+					type             : String,
+					initDependencies : 'b',
+				},
+				b : {
+					type             : String,
+					initDependencies : 'a',
+				},
+			}
+		});
+
+		var Cycle2 = JS.class('Cycle2', {
+			fields : {
+				a : {
+					type             : String,
+					initDependencies : 'b',
+				},
+				b : {
+					type             : String,
+					initDependencies : 'c',
+				},
+				c : {
+					type             : String,
+					initDependencies : 'a',
+				}
+			}
+		});
+
+		var Cycle3 = JS.class('Cycle3', {
+			inherits : Foo,
+
+			fields : {
+				a : {
+					type : String,
+					initDependencies : 'e'
+				}
+			}
+		});
+
+		/* Make sure the error we're expecting is thrown by matching against the
+		 * error message, since a 'Maximum call stack size exceeded' error can
+		 * be thrown instead if the cycle detection is not working. */
+		const errorExp = /initDependencies cycle/;
+		expect(() => new Cycle1()).to.throw(errorExp);
+		expect(() => new Cycle2()).to.throw(errorExp);
+		expect(() => new Cycle3()).to.throw(errorExp);
+	});
 });
