@@ -1,25 +1,23 @@
 {
-	"name"        : "JSClass",
-	"version"     : "1.0.6",
-	"main"        : "JS.js",
-	"description" : "OOP library for Javascript",
-	"author"      : "Tomas Benda <tomas@roadmunk.com>",
-	"license"     : "MIT",
-	"repository"  : "https://github.com/Roadmunk/JS",
-
+	"name": "JSClass",
+	"version": "1.0.7",
+	"main": "JS.js",
+	"description": "OOP library for Javascript",
+	"author": "Tomas Benda <tomas@roadmunk.com>",
+	"license": "MIT",
+	"repository": "Roadmunk/JS",
 	"dependencies": {
-		"amdefine" : "1.0.x"
+		"amdefine": "^1.0.0"
 	},
-
 	"devDependencies": {
-		"chance"                 : "1.x.x",
-		"mocha"                  : "2.x.x",
-		"chai"                   : "3.x.x",
-		"chai-datetime"          : "1.x.x",
-		"eslint-config-roadmunk" : "roadmunk/eslint-config-roadmunk"
+		"chai": "^3.0.0",
+		"chai-datetime": "^1.0.0",
+		"chance": "^1.0.0",
+		"eslint": "^3.19.0",
+		"eslint-config-roadmunk": "github:roadmunk/eslint-config-roadmunk#semver:^1.0.3",
+		"mocha": "^2.0.0"
 	},
-
-	"engines" : {
-		"node" : ">=4"
+	"engines": {
+		"node": ">=4"
 	}
 }
