@@ -905,9 +905,9 @@ JS.class(BaseClass, {
 			},
 
 			/**
-			 * Returns whether this class is an abstract class that contains abstract methods.
+			 * Returns whether this class is an abstract class that contains abstract methods or fields.
 			 * Abstract classes cannot be instatiated as is; they need to be subclassed and all
-			 * abstract methods need to be implemented.
+			 * abstract methods/fields need to be implemented.
 			 */
 			isAbstract : function() {
 				if (!this.hasOwnProperty('__abstract')) {
@@ -916,6 +916,7 @@ JS.class(BaseClass, {
 					var currentClass       = this;
 
 					while (currentClass && currentClass.properties && !this.hasOwnProperty('__abstract')) {
+						// COULDDO: don't repeat these blocks - makes it a little more difficult to differentiate fields from methods
 						for (var methodName in currentClass.properties.methods) {
 							if (currentClass.properties.methods[methodName].abstract && implementedMethods[methodName] === undefined) {
 								this.__abstract = true;
