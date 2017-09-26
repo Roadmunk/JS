@@ -48,7 +48,7 @@ describe('abstract.js', function() {
 
 	const AbstractClass4 =
 	JS.class('AbstractClass4', {
-		// inherits : ConcreteClass,
+		inherits : ConcreteClass,
 
 		fields : {
 			field1 : { abstract : true },
