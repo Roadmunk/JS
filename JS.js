@@ -937,8 +937,11 @@ JS.class(BaseClass, {
 						currentClass = currentClass.__parentClass__;
 					}
 
-					if (!this.hasOwnProperty('__abstract'))
-						this.__abstract = false;
+					if (!this.hasOwnProperty('__abstract')) {
+						this.__abstract           = false;
+						this.__abstractMethodName = undefined;
+						this.__abstractFieldName  = undefined;
+					}
 				}
 
 				return this.__abstract;
