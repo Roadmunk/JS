@@ -1,6 +1,6 @@
 {
 	"name": "JSClass",
-	"version": "1.0.7",
+	"version": "1.0.8",
 	"main": "JS.js",
 	"description": "OOP library for Javascript",
 	"author": "Tomas Benda <tomas@roadmunk.com>",

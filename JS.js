@@ -428,8 +428,11 @@ function createFunctionHelper(clazz, args) {
 		// if called recursively, then it's a casting instance creation (don't call constructors)
 		if (!constructingThis || !recursiveCall) {
 			// check for abstract class only if this is the top-level call (ie. not a base-class constructor call)
-			if (constructingThis && BaseClass.isAbstract.call(clazz))
-				throw new Error(`cannot instantiate abstract class: ${this.constructor.__className__} (method: ${BaseClass.abstractMethodName.call(clazz)})`);
+			if (constructingThis && BaseClass.isAbstract.call(clazz)) {
+				var methodName = BaseClass.abstractMethodName.call(clazz);
+				var fieldName  = BaseClass.abstractFieldName.call(clazz);
+				throw new Error(`cannot instantiate abstract class: ${this.constructor.__className__} (${methodName ? `method : ${methodName}` : `field: ${fieldName}`})`);
+			}
 
 			// add instance fields
 			createFields.call(this, clazz.properties.fields);
@@ -902,16 +905,18 @@ JS.class(BaseClass, {
 			},
 
 			/**
-			 * Returns whether this class is an abstract class that contains abstract methods.
+			 * Returns whether this class is an abstract class that contains abstract methods or fields.
 			 * Abstract classes cannot be instatiated as is; they need to be subclassed and all
-			 * abstract methods need to be implemented.
+			 * abstract methods/fields need to be implemented.
 			 */
 			isAbstract : function() {
 				if (!this.hasOwnProperty('__abstract')) {
 					var implementedMethods = {};
-					var currentClass = this;
+					var implementedFields  = {};
+					var currentClass       = this;
 
 					while (currentClass && currentClass.properties && !this.hasOwnProperty('__abstract')) {
+						// COULDDO: don't repeat these blocks - makes it a little more difficult to differentiate fields from methods
 						for (var methodName in currentClass.properties.methods) {
 							if (currentClass.properties.methods[methodName].abstract && implementedMethods[methodName] === undefined) {
 								this.__abstract = true;
@@ -920,11 +925,23 @@ JS.class(BaseClass, {
 							}
 							implementedMethods[methodName] = true;
 						}
+						for (var fieldName in currentClass.properties.fields) {
+							if (currentClass.properties.fields[fieldName].abstract && implementedFields[fieldName] === undefined) {
+								this.__abstract = true;
+								this.__abstractFieldName = fieldName;
+								break;
+							}
+							implementedFields[fieldName] = true;
+						}
+
 						currentClass = currentClass.__parentClass__;
 					}
 
-					if (!this.hasOwnProperty('__abstract'))
-						this.__abstract = false;
+					if (!this.hasOwnProperty('__abstract')) {
+						this.__abstract           = false;
+						this.__abstractMethodName = undefined;
+						this.__abstractFieldName  = undefined;
+					}
 				}
 
 				return this.__abstract;
@@ -938,6 +955,16 @@ JS.class(BaseClass, {
 			 */
 			abstractMethodName : function() {
 				return this.__abstractMethodName;
+			},
+
+			/**
+			 * If this class is an abstract class, then this method returns the name of
+			 * an un-implemented field.  This is useful for debugging.
+			 *
+			 * @returns {String}
+			 */
+			abstractFieldName : function() {
+				return this.__abstractFieldName;
 			},
 
 			/**
