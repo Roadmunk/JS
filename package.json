@@ -1,25 +1,35 @@
 {
-	"name"        : "JSClass",
-	"version"     : "1.0.4",
-	"main"        : "JS.js",
-	"description" : "OOP library for Javascript",
-	"author"      : "Tomas Benda <tomas@roadmunk.com>",
-	"license"     : "MIT",
-	"repository"  : "https://github.com/Roadmunk/JS",
-
-	"dependencies": {
-		"amdefine" : "1.0.x"
-	},
-
-	"devDependencies": {
-		"chance"                 : "1.x.x",
-		"mocha"                  : "2.x.x",
-		"chai"                   : "3.x.x",
-		"chai-datetime"          : "1.x.x",
-		"eslint-config-roadmunk" : "roadmunk/eslint-config-roadmunk"
-	},
-
-	"engines" : {
-		"node" : ">=4"
-	}
+  "name": "@roadmunk/jsclass",
+  "version": "1.0.8",
+  "main": "JS.js",
+  "description": "OOP library for Javascript",
+  "author": "Tomas Benda <tomas@roadmunk.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Roadmunk/JS.git"
+  },
+  "dependencies": {
+    "amdefine": "^1.0.1"
+  },
+  "devDependencies": {
+    "chance": "^1.0.10",
+    "mocha": "^3.5.0",
+    "chai": "^3.5.0",
+    "chai-datetime": "^1.5.0",
+    "@roadmunk/eslint-config-roadmunk": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=4"
+  },
+  "bugs": {
+    "url": "https://github.com/Roadmunk/JS/issues"
+  },
+  "homepage": "https://github.com/Roadmunk/JS#readme",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha"
+  }
 }
