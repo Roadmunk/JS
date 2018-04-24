@@ -269,4 +269,24 @@ describe('mixin', function() {
 		var obj = new SubSub();
 		expect(obj.func()).to.equal('Base+Mix+Mix');
 	});
+
+	// COULDDO: implement this behaviour since it's counter-intuitive that this wouldn't happen
+	// however, this might cause bugs in existing code since it would change existing behaviour
+	it.skip("should call the mixin's constructor", function() {
+		var Mixin = JS.class('Mixin', {
+			fields : {
+				f : 0,
+			},
+			constructor : function() {
+				this.f = 1;
+			}
+		});
+
+		var Foo = JS.class('Foo', {
+			mixin : Mixin
+		});
+
+		var foo = new Foo();
+		expect(foo.f).to.equal(1);
+	});
 });
