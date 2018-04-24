@@ -199,7 +199,36 @@ s.save();
 
 ### Abstract Classes
 
-TODO
+A class can be defined as having abstract fields and methods, which can be used to define an interface for all subclasses to implement.
+
+```javascript
+const PersistableClass = JS.class('PersistableClass', {
+	fields : {
+		isSaved : { abstract : true },
+	},
+
+	methods : {
+		save : { abstract : true },
+	},
+});
+
+const MyModel = JS.class('MyModel', {
+	fields : {
+		isSaved : {
+			get : function() { /* ... */ }
+		}
+	},
+
+	methods : {
+		save : function() { /* ... */ }
+	}
+});
+
+```
+
+Note that a class with _any_ abstract properties **cannot** be instantiated, an error will be thrown if this is attempted.
+
+**Note:** Before version 1.0.8, `JSClass` would only prevent instantiation of classes with abstract methods, but allowed instantiation of classes with abstract fields.
 
 ### Static
 

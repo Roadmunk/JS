@@ -257,6 +257,10 @@ function extendPropertiesWithClass(properties, clazz, options) {
 		return;
 	}
 
+	// check if mixin has a constructor which currently won't get run (atleast log a warning)
+	if (options.isMixin && getConstructor(clazz.properties, clazz.__className__))
+		console.warn("mixin class has a constructor but it won't get run: " + clazz.__className__);
+
 	// 1. add from any base classes
 	extendPropertiesWithClass(properties, classProperties.inherits, {
 		isMixin     : options.isMixin,
@@ -424,8 +428,11 @@ function createFunctionHelper(clazz, args) {
 		// if called recursively, then it's a casting instance creation (don't call constructors)
 		if (!constructingThis || !recursiveCall) {
 			// check for abstract class only if this is the top-level call (ie. not a base-class constructor call)
-			if (constructingThis && BaseClass.isAbstract.call(clazz))
-				throw new Error(`cannot instantiate abstract class: ${this.constructor.__className__} (method: ${BaseClass.abstractMethodName.call(clazz)})`);
+			if (constructingThis && BaseClass.isAbstract.call(clazz)) {
+				var methodName = BaseClass.abstractMethodName.call(clazz);
+				var fieldName  = BaseClass.abstractFieldName.call(clazz);
+				throw new Error(`cannot instantiate abstract class: ${this.constructor.__className__} (${methodName ? `method : ${methodName}` : `field: ${fieldName}`})`);
+			}
 
 			// add instance fields
 			createFields.call(this, clazz.properties.fields);
@@ -704,18 +711,20 @@ function makeSuperStackUpdaterProxy(method) {
 			proxy.superStack.set(this, instanceStack);
 		}
 
-		// prevent leaking arguments to allow for optimization
-		const len = arguments.length;
-		const args = new Array(len);
-		for (let i = 0; i < len; i++)
-			args[i] = arguments[i];
+		if (updatedStack) {
+			// prevent leaking arguments to allow for optimization
+			const len = arguments.length;
+			const args = new Array(len);
+			for (let i = 0; i < len; i++)
+				args[i] = arguments[i];
 
-		// run the try-finally as a seperate function to allow for optimization
-		const self = this;
-		return tryFinally(
-			function() { return method.apply(self, args); },
-			updatedStack ? function() { instanceStack.pop(); proxy.superStack.set(self, instanceStack); } : null
-		);
+			return tryFinally(
+				() => method.apply(this, args),
+				() => { instanceStack.pop(); proxy.superStack.set(this, instanceStack); }
+			);
+		}
+
+		return method.apply(this, arguments);
 	}
 }
 
@@ -896,16 +905,18 @@ JS.class(BaseClass, {
 			},
 
 			/**
-			 * Returns whether this class is an abstract class that contains abstract methods.
+			 * Returns whether this class is an abstract class that contains abstract methods or fields.
 			 * Abstract classes cannot be instatiated as is; they need to be subclassed and all
-			 * abstract methods need to be implemented.
+			 * abstract methods/fields need to be implemented.
 			 */
 			isAbstract : function() {
 				if (!this.hasOwnProperty('__abstract')) {
 					var implementedMethods = {};
-					var currentClass = this;
+					var implementedFields  = {};
+					var currentClass       = this;
 
 					while (currentClass && currentClass.properties && !this.hasOwnProperty('__abstract')) {
+						// COULDDO: don't repeat these blocks - makes it a little more difficult to differentiate fields from methods
 						for (var methodName in currentClass.properties.methods) {
 							if (currentClass.properties.methods[methodName].abstract && implementedMethods[methodName] === undefined) {
 								this.__abstract = true;
@@ -914,11 +925,23 @@ JS.class(BaseClass, {
 							}
 							implementedMethods[methodName] = true;
 						}
+						for (var fieldName in currentClass.properties.fields) {
+							if (currentClass.properties.fields[fieldName].abstract && implementedFields[fieldName] === undefined) {
+								this.__abstract = true;
+								this.__abstractFieldName = fieldName;
+								break;
+							}
+							implementedFields[fieldName] = true;
+						}
+
 						currentClass = currentClass.__parentClass__;
 					}
 
-					if (!this.hasOwnProperty('__abstract'))
-						this.__abstract = false;
+					if (!this.hasOwnProperty('__abstract')) {
+						this.__abstract           = false;
+						this.__abstractMethodName = undefined;
+						this.__abstractFieldName  = undefined;
+					}
 				}
 
 				return this.__abstract;
@@ -932,6 +955,16 @@ JS.class(BaseClass, {
 			 */
 			abstractMethodName : function() {
 				return this.__abstractMethodName;
+			},
+
+			/**
+			 * If this class is an abstract class, then this method returns the name of
+			 * an un-implemented field.  This is useful for debugging.
+			 *
+			 * @returns {String}
+			 */
+			abstractFieldName : function() {
+				return this.__abstractFieldName;
 			},
 
 			/**
@@ -1039,7 +1072,6 @@ JS.util.createFactory = function(constructor) {
  * @return {Array} if value is already an Array, value; otherwise a new Array containing value as it's only element
  */
 function ensureArray(value) {
-	if (arguments.length === 0) return [];
 	if (value === undefined || value === null) return [];
 	if (Array.isArray(value)) return value;
 	return [ value ];
@@ -1066,10 +1098,12 @@ JS.util.proxy = function(object, property, newFunction) {
 		throw new Error("newFunction must be a function: " + newFunction);
 
 	object[property] = function() {
-		var args = [ oldFunc ];
+		const len = arguments.length;
+		var args  = new Array(len + 1)
+		args[0]   = oldFunc;
 
-		for (var a = 0; a < arguments.length; a++)
-			args.push(arguments[a]);
+		for (var a = 0; a < len; a++)
+			args[a + 1] = arguments[a];
 
 		return newFunction.apply(this, args);
 	};
@@ -1099,8 +1133,8 @@ JS.util.clone = clone;
 
 /**
  * Helper function that runs a try-finally in a seperate function to allow compiler optimization
- * @param  {function} tryBlock       A function to be run in the `try` block
- * @param  {function} [finallyBlock] A function to be run in the `finally` block
+ * @param  {function} tryBlock     A function to be run in the `try` block
+ * @param  {function} finallyBlock A function to be run in the `finally` block
  * @return {*}                       return value of the `tryBlock`
  */
 function tryFinally(tryBlock, finallyBlock) {
@@ -1108,8 +1142,7 @@ function tryFinally(tryBlock, finallyBlock) {
 		return tryBlock();
 	}
 	finally {
-		if (finallyBlock)
-			finallyBlock();
+		finallyBlock();
 	}
 }
 
