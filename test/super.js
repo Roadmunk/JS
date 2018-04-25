@@ -221,10 +221,10 @@ describe('super.js', function() {
 
 	it('should support super calling the same method on another instance', function() {
 		const parent = new Subsubclass();
-		parent.a = 'parent';
+		parent.a     = 'parent';
 
-		const child = new Subsubclass();
-		child.a = 'child';
+		const child  = new Subsubclass();
+		child.a      = 'child';
 		parent.child = child;
 
 		expect(parent.methodRecurse()).to.equal('Subsub-Sub-parent Subsub-Sub-child');
@@ -232,7 +232,7 @@ describe('super.js', function() {
 
 	it('should support cyclical recursive super method calls', function() {
 		const s1 = new Subclass();
-		s1.a   = 'Foo';
+		s1.a     = 'Foo';
 		expect(s1.methodRecurse2(0)).to.equal('Sub-Base Foo');
 		expect(s1.methodRecurse2(1)).to.equal('Sub-Base Sub-Base Foo Foo');
 		expect(s1.methodRecurse2(2)).to.equal('Sub-Base Sub-Base Sub-Base Foo Foo Foo');
@@ -240,7 +240,7 @@ describe('super.js', function() {
 
 
 		const s2 = new Subsubclass();
-		s2.a   = 'Bar';
+		s2.a     = 'Bar';
 		expect(s2.methodRecurse2(0)).to.equal('Subsub-Sub-Base Bar');
 		expect(s2.methodRecurse2(1)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Bar Bar');
 		expect(s2.methodRecurse2(2)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar');
@@ -260,7 +260,7 @@ describe('super.js', function() {
 		this.timeout(5000);
 
 		const s1 = new Subclass();
-		s1.a   = 'Foo';
+		s1.a     = 'Foo';
 		expect(await s1.asyncRecurse2(0)).to.equal('Sub-Base Foo');
 		expect(await s1.asyncRecurse2(1)).to.equal('Sub-Base Sub-Base Foo Foo');
 		expect(await s1.asyncRecurse2(2)).to.equal('Sub-Base Sub-Base Sub-Base Foo Foo Foo');
@@ -268,7 +268,7 @@ describe('super.js', function() {
 
 
 		const s2 = new Subsubclass();
-		s2.a   = 'Bar';
+		s2.a     = 'Bar';
 		expect(await s2.asyncRecurse2(0)).to.equal('Subsub-Sub-Base Bar');
 		expect(await s2.asyncRecurse2(1)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Bar Bar');
 		expect(await s2.asyncRecurse2(2)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar');

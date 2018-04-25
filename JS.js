@@ -1129,7 +1129,7 @@ JS.util.clone = clone;
  * Helper function that runs two functions in a try-finally block, but will only run the `finallyBlock`
  * function after any promises returned from the `tryBlock` function has fulfilled/rejected.
  * The `finallyBlock` function will only ever be invoked once.
- * @param  {Function} tryBlock       A (possibly asyncrhonous) function to be run in the `try` block
+ * @param  {Function} tryBlock       A (possibly asynchronous) function to be run in the `try` block
  * @param  {Function} [finallyBlock] A (synchronous) function to be run after the `tryBlock` function has executed and any returned promise has resolved
  * @return {*}                       return value of the `tryBlock`
  */
