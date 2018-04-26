@@ -697,7 +697,7 @@ function makeSuperStackUpdaterProxy(method) {
 	if (method.toString().indexOf('.super.') === -1)
 		return method;
 
-	return function proxy() {
+	return function proxy(...args) {
 		/* Note: superStack is a map of instance to an array of callstack methods on that instance,
 		 * and is initialized on the first invocation of `super` for each method (@see makeSuperMethodProxy())
 		 */
@@ -712,19 +712,13 @@ function makeSuperStackUpdaterProxy(method) {
 		}
 
 		if (updatedStack) {
-			// prevent leaking arguments to allow for optimization
-			const len = arguments.length;
-			const args = new Array(len);
-			for (let i = 0; i < len; i++)
-				args[i] = arguments[i];
-
-			return tryFinally(
+			return possiblyAsyncTryFinally(
 				() => method.apply(this, args),
 				() => { instanceStack.pop(); proxy.superStack.set(this, instanceStack); }
 			);
 		}
 
-		return method.apply(this, arguments);
+		return method.apply(this, args);
 	}
 }
 
@@ -762,7 +756,7 @@ function getSuperMethod(method, clazz) {
  * Since a super method could also call this.method.super, we maintain a stack of calls to super so that we can properly progress through the chain.
  */
 function makeSuperMethodProxy(method) {
-	return function() {
+	return function(...args) {
 		// superStack is a map of instance to an array of callstack methods on that instance
 		if (method.superStack === undefined)
 			method.superStack = new Map();
@@ -779,17 +773,17 @@ function makeSuperMethodProxy(method) {
 		currentStack.push(currentMethod.__overrides__);
 		method.superStack.set(this, currentStack);
 
-		try {
-			return currentMethod.__overrides__.apply(this, arguments);
-		}
-		finally {
-			if (currentStack.length < 2)
-				method.superStack.delete(this);
-			else {
-				currentStack.pop();
-				method.superStack.set(currentStack);
+		return possiblyAsyncTryFinally(
+			() => currentMethod.__overrides__.apply(this, args),
+			() => {
+				if (currentStack.length < 2)
+					method.superStack.delete(this);
+				else {
+					currentStack.pop();
+					method.superStack.set(currentStack);
+				}
 			}
-		}
+		);
 	}
 }
 
@@ -1132,17 +1126,36 @@ function clone(obj) {
 JS.util.clone = clone;
 
 /**
- * Helper function that runs a try-finally in a seperate function to allow compiler optimization
- * @param  {function} tryBlock     A function to be run in the `try` block
- * @param  {function} finallyBlock A function to be run in the `finally` block
+ * Helper function that runs two functions in a try-finally block, but will only run the `finallyBlock`
+ * function after any promises returned from the `tryBlock` function has fulfilled/rejected.
+ * The `finallyBlock` function will only ever be invoked once.
+ * @param  {Function} tryBlock       A (possibly asynchronous) function to be run in the `try` block
+ * @param  {Function} [finallyBlock] A (synchronous) function to be run after the `tryBlock` function has executed and any returned promise has resolved
  * @return {*}                       return value of the `tryBlock`
  */
-function tryFinally(tryBlock, finallyBlock) {
+function possiblyAsyncTryFinally(tryBlock, finallyBlock) {
+	let isAsync = false;
 	try {
-		return tryBlock();
+		let result = tryBlock();
+		if (result instanceof Promise) {
+			isAsync = true;
+			result  = result.then(
+				res => {
+					finallyBlock ? finallyBlock() : null;
+					return res;
+				},
+				err => {
+					finallyBlock ? finallyBlock() : null;
+					throw err;
+				}
+			);
+		}
+		return result;
 	}
 	finally {
-		finallyBlock();
+		if (!isAsync && finallyBlock) {
+			finallyBlock();
+		}
 	}
 }
 

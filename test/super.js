@@ -59,7 +59,19 @@ describe('super.js', function() {
 			methodRecurse2 : function(recurseCount) {
 				const recursiveResult = recurseCount > 0 ? this.methodRecurse2(recurseCount - 1) + ' ' : '';
 				return `Base ${recursiveResult}${this.a}`;
-			}
+			},
+
+			asyncMethod : async function(prefix) {
+				await wait(10);
+				this.a = prefix + ' BaseClass';
+			},
+
+			asyncRecurse2 : async function(recurseCount) {
+				await wait(5);
+				const recursiveResult = recurseCount > 0 ? await this.asyncRecurse2(recurseCount - 1) + ' ' : '';
+				await wait(5);
+				return `Base ${recursiveResult}${this.a}`;
+			},
 		}
 	});
 
@@ -82,8 +94,21 @@ describe('super.js', function() {
 			methodRecurse2 : function(recurseCount) {	// eslint-disable-line no-unused-vars
 				const superResult = this.methodRecurse2.super.apply(this, arguments);
 				return `Sub-${superResult}`;
-			}
+			},
 			// note that method2 is deliberately ommitted
+			
+			asyncMethod : async function(prefix) {
+				await wait(10);
+				this.a = prefix + ' Subclass';
+				await this.asyncMethod.super.call(this, prefix);
+			},
+
+			asyncRecurse2 : async function(recurseCount) {	// eslint-disable-line no-unused-vars
+				await wait(5);
+				const superResult = await this.asyncRecurse2.super.apply(this, arguments);
+				await wait(5);
+				return `Sub-${superResult}`;
+			},
 		}
 	});
 
@@ -130,9 +155,29 @@ describe('super.js', function() {
 			methodRecurse2 : function(recurseCount) {	// eslint-disable-line no-unused-vars
 				const superResult = this.methodRecurse2.super.apply(this, arguments);
 				return `Subsub-${superResult}`;
-			}
+			},
+
+			asyncMethod : async function(prefix) {
+				await wait(10);
+				this.a = prefix + ' SubSubclass';
+				await this.asyncMethod.super.call(this, prefix);
+			},
+
+			asyncRecurse2 : async function(recurseCount) {	// eslint-disable-line no-unused-vars
+				await wait(5);
+				const superResult = await this.asyncRecurse2.super.apply(this, arguments);
+				await wait(5);
+				return `Subsub-${superResult}`;
+			},
+
 		}
 	});
+
+	function wait(ms) {
+		return new Promise(resolve => {
+			setTimeout(() => resolve(), ms);
+		});
+	};
 
 	it('should allow calls to methods in ancestor classes', function() {
 		const subsubclass = new Subsubclass();
@@ -176,10 +221,10 @@ describe('super.js', function() {
 
 	it('should support super calling the same method on another instance', function() {
 		const parent = new Subsubclass();
-		parent.a = 'parent';
+		parent.a     = 'parent';
 
-		const child = new Subsubclass();
-		child.a = 'child';
+		const child  = new Subsubclass();
+		child.a      = 'child';
 		parent.child = child;
 
 		expect(parent.methodRecurse()).to.equal('Subsub-Sub-parent Subsub-Sub-child');
@@ -187,7 +232,7 @@ describe('super.js', function() {
 
 	it('should support cyclical recursive super method calls', function() {
 		const s1 = new Subclass();
-		s1.a   = 'Foo';
+		s1.a     = 'Foo';
 		expect(s1.methodRecurse2(0)).to.equal('Sub-Base Foo');
 		expect(s1.methodRecurse2(1)).to.equal('Sub-Base Sub-Base Foo Foo');
 		expect(s1.methodRecurse2(2)).to.equal('Sub-Base Sub-Base Sub-Base Foo Foo Foo');
@@ -195,11 +240,39 @@ describe('super.js', function() {
 
 
 		const s2 = new Subsubclass();
-		s2.a   = 'Bar';
+		s2.a     = 'Bar';
 		expect(s2.methodRecurse2(0)).to.equal('Subsub-Sub-Base Bar');
 		expect(s2.methodRecurse2(1)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Bar Bar');
 		expect(s2.methodRecurse2(2)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar');
 		expect(s2.methodRecurse2(3)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar Bar');
+	});
+
+	it('should allow asynchronous super calls', async function () {
+		this.timeout(5000);
+
+		const subsubclass = new Subsubclass();
+
+		await subsubclass.asyncMethod('testing');
+		expect(subsubclass.a).to.equal('testing BaseClass');
+	});
+
+	it('should support cyclical recursive asynchronous super method calls', async function() {
+		this.timeout(5000);
+
+		const s1 = new Subclass();
+		s1.a     = 'Foo';
+		expect(await s1.asyncRecurse2(0)).to.equal('Sub-Base Foo');
+		expect(await s1.asyncRecurse2(1)).to.equal('Sub-Base Sub-Base Foo Foo');
+		expect(await s1.asyncRecurse2(2)).to.equal('Sub-Base Sub-Base Sub-Base Foo Foo Foo');
+		expect(await s1.asyncRecurse2(3)).to.equal('Sub-Base Sub-Base Sub-Base Sub-Base Foo Foo Foo Foo');
+
+
+		const s2 = new Subsubclass();
+		s2.a     = 'Bar';
+		expect(await s2.asyncRecurse2(0)).to.equal('Subsub-Sub-Base Bar');
+		expect(await s2.asyncRecurse2(1)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Bar Bar');
+		expect(await s2.asyncRecurse2(2)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar');
+		expect(await s2.asyncRecurse2(3)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar Bar');
 	});
 
 	it.skip('performance test', function() {
