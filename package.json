@@ -13,11 +13,10 @@
     "amdefine": "^1.0.1"
   },
   "devDependencies": {
-    "chance": "^1.0.10",
-    "mocha": "^3.5.0",
+    "@roadmunk/eslint-config-roadmunk": "^2.0.5",
     "chai": "^3.5.0",
     "chai-datetime": "^1.5.0",
-    "@roadmunk/eslint-config-roadmunk": "^2.0.5"
+    "mocha": "^3.5.0"
   },
   "engines": {
     "node": ">=4"
