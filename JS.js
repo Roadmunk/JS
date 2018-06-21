@@ -702,19 +702,14 @@ function makeSuperStackUpdaterProxy(method) {
 		 * and is initialized on the first invocation of `super` for each method (@see makeSuperMethodProxy())
 		 */
 
-		let updatedStack    = false;	// flag indicating that we did modify the stack, and need to clean up afterwards
 		const instanceStack = proxy.superStack ? proxy.superStack.get(this) : null;	// the super callstack for `this` instance, if any exists
-
 		if (instanceStack && instanceStack.length && instanceStack[instanceStack.length - 1] != proxy) {
-			updatedStack = true;
 			instanceStack.push(proxy);
-			proxy.superStack.set(this, instanceStack);
-		}
 
-		if (updatedStack) {
+			// we've modified the stack, so need to clean up afterwards
 			return possiblyAsyncTryFinally(
 				() => method.apply(this, args),
-				() => { instanceStack.pop(); proxy.superStack.set(this, instanceStack); }
+				() => instanceStack.pop()
 			);
 		}
 
@@ -758,29 +753,34 @@ function getSuperMethod(method, clazz) {
 function makeSuperMethodProxy(method) {
 	return function(...args) {
 		// superStack is a map of instance to an array of callstack methods on that instance
-		if (method.superStack === undefined)
+		if (method.superStack === undefined) {
 			method.superStack = new Map();
+		}
 
-		var currentStack  = method.superStack.get(this) || [];
-		var currentMethod = currentStack.length > 0 ? currentStack[currentStack.length - 1] : method;
+		let currentStack = method.superStack.get(this);
+		if (!currentStack) {
+			currentStack = [];
+			method.superStack.set(this, currentStack);
+		}
 
-		if (currentMethod.__overrides__ === undefined)
+		const currentMethod = currentStack.length > 0 ? currentStack[currentStack.length - 1] : method;
+		if (currentMethod.__overrides__ === undefined) {
 			currentMethod.__overrides__ = getSuperMethod(currentMethod, currentMethod.__class__);
-
-		if (currentMethod.__overrides__ === null)
+		}
+		if (currentMethod.__overrides__ === null) {
 			return null;
+		}
 
 		currentStack.push(currentMethod.__overrides__);
-		method.superStack.set(this, currentStack);
 
 		return possiblyAsyncTryFinally(
 			() => currentMethod.__overrides__.apply(this, args),
 			() => {
-				if (currentStack.length < 2)
+				if (currentStack.length < 2) {
 					method.superStack.delete(this);
+				}
 				else {
 					currentStack.pop();
-					method.superStack.set(currentStack);
 				}
 			}
 		);
