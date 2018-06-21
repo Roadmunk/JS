@@ -757,13 +757,13 @@ function makeSuperMethodProxy(method) {
 			method.superStack = new Map();
 		}
 
-		var currentStack = method.superStack.get(this);
+		let currentStack = method.superStack.get(this);
 		if (!currentStack) {
 			currentStack = [];
 			method.superStack.set(this, currentStack);
 		}
 
-		var currentMethod = currentStack.length > 0 ? currentStack[currentStack.length - 1] : method;
+		const currentMethod = currentStack.length > 0 ? currentStack[currentStack.length - 1] : method;
 		if (currentMethod.__overrides__ === undefined) {
 			currentMethod.__overrides__ = getSuperMethod(currentMethod, currentMethod.__class__);
 		}
