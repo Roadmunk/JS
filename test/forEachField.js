@@ -5,36 +5,36 @@ var expect = require('chai').expect;
 
 describe('forEachField.js', function() {
 
-	var BaseClass = JS.class('BaseClass', {
+	const BaseClass = JS.class('BaseClass', {
 		fields : {
 			a : '',
 			b : {
-				type : 0,
-				extra : ''
-			}
+				type  : 0,
+				extra : '',
+			},
 		},
 	});
 
-	var Subclass = JS.class('Subclass', {
+	const Subclass = JS.class('Subclass', {
 		inherits : BaseClass,
-		fields : {
-			c : Object
+		fields   : {
+			c : Object,
 		},
 	});
 
-	var Subsubclass = JS.class('Subsubclass', {
+	const Subsubclass = JS.class('Subsubclass', {
 		inherits : Subclass,
-		fields : {
+		fields   : {
 			d : {
-				type : BaseClass
-			}
-		}
+				type : BaseClass,
+			},
+		},
 	});
 
 	it('forEachField() should visit fields in current class and all ancestors', function() {
-		var subsubclass = new Subsubclass();
+		const subsubclass = new Subsubclass();
 
-		var fields = {};
+		const fields = {};
 
 		subsubclass.forEachField(function(fieldName, properties) {
 			fields[fieldName] = properties;

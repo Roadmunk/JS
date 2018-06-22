@@ -6,64 +6,84 @@ const expect = require('chai').expect;
 describe('method regions', function() {
 	const Foo = JS.class('Foo', {
 		methods : {
-			method0 : function() { return 0 },
+			method0 : function() {
+				return 0;
+			},
 
 			$group1 : {
-				method1 : function() { return 1 },
-				method2 : function() { return 2 },
+				method1 : function() {
+					return 1;
+				},
+				method2 : function() {
+					return 2;
+				},
 				getter : {
-					get : function() { return 3 }
-				}
-			}
-		}
+					get : function() {
+						return 3;
+					},
+				},
+			},
+		},
 	});
 
 	const Bar = JS.class('Bar', {
 		inherits : Foo,
 
 		methods : {
-			method1 : function() { return 11 },
+			method1 : function() {
+				return 11;
+			},
 
 			$group2 : {
-				method0 : function() { return -1 }
-			}
-		}
+				method0 : function() {
+					return -1;
+				},
+			},
+		},
 	});
 
 	const Bar2 = JS.class('Bar2', {
 		mixin : Foo,
 
 		methods : {
-			method1 : function() { return 11 },
+			method1 : function() {
+				return 11;
+			},
 
 			$group1 : {
-				method0 : function() { return -1 }
-			}
-		}
+				method0 : function() {
+					return -1;
+				},
+			},
+		},
 	});
 
 	const Bar3 = JS.class('Bar3', {
 		methods : {
 			method0 : { abstract : true },
-			method1 : { abstract : true }
-		}
+			method1 : { abstract : true },
+		},
 	});
 
 	const Bar4 = JS.class('Bar4', {
 		inherits : Bar3,
-		mixin    : Foo
+		mixin    : Foo,
 	});
 
 	const Bar5 = JS.class('Bar5', {
 		mixin : Bar3,
 
 		methods : {
-			method0 : function() { return 0 },
+			method0 : function() {
+				return 0;
+			},
 
 			$group : {
-				method1 : function() { return 1 }
-			}
-		}
+				method1 : function() {
+					return 1;
+				},
+			},
+		},
 	});
 
 	it('should allow methods to be enclosed in named regions', function() {

@@ -12,18 +12,18 @@ describe('stub.js', function() {
 	JS.class(Foo, {
 		fields : {
 			bar : {
-				type : Bar
-			}
-		}
+				type : Bar,
+			},
+		},
 	});
 
 	JS.class(Bar, {
 		fields : {
 			foo : {
 				type : Foo,
-				init : null
-			}
-		}
+				init : null,
+			},
+		},
 	});
 
 	it('should allow creation of instances whose classes have references to each other', function() {
@@ -35,6 +35,8 @@ describe('stub.js', function() {
 	});
 
 	it('should disallow creation of instances of stub classes', function() {
-		expect(function() { new Stub() }).to.throw();
+		expect(function() {
+			new Stub();
+		}).to.throw();
 	});
 });
