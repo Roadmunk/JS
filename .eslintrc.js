@@ -1,5 +1,5 @@
 module.exports = {
-	extends : "eslint-config-roadmunk",
+	extends : "./node_modules/@roadmunk/eslint-config-roadmunk/index.js",
 
 	env : {
 		mocha : true
