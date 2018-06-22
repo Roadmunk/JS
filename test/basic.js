@@ -1,7 +1,7 @@
 'use strict';
 
-var JS     = require('../JS');
-var expect = require('chai').expect;
+const JS     = require('../JS');
+const expect = require('chai').expect;
 
 describe('basic.js', function() {
 
@@ -166,7 +166,7 @@ describe('basic.js', function() {
 
 		describe('JS.class.isSubclass and ParentClass.isSubclass', function() {
 			it('should correctly lookup subclasses by class object', function() {
-			// a class that inherits from a built-in class
+				// a class that inherits from a built-in class
 				const MyError = JS.class('MyError', {
 					inherits : Error,
 					mixin    : JS.class.BaseClass,	// mixin BaseClass if we want BaseClass functionality (because it doesn't exist in Error)

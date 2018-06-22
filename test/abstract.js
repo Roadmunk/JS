@@ -5,8 +5,7 @@ const expect = require('chai').expect;
 
 describe('abstract.js', function() {
 
-	const AbstractClass1
-	= JS.class('AbstractClass1', {
+	const AbstractClass1 = JS.class('AbstractClass1', {
 		methods : {
 			method1 : {
 				abstract : true,
@@ -14,8 +13,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const AbstractClass2
-	= JS.class('AbstractClass2', {
+	const AbstractClass2 = JS.class('AbstractClass2', {
 		inherits : AbstractClass1,
 
 		methods : {
@@ -23,8 +21,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const AbstractClass3
-	= JS.class('AbstractClass3', {
+	const AbstractClass3 = JS.class('AbstractClass3', {
 		inherits : AbstractClass2,
 
 		methods : {
@@ -34,8 +31,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const ConcreteClass
-	= JS.class('ConcreteClass', {
+	const ConcreteClass = JS.class('ConcreteClass', {
 		inherits : AbstractClass2,
 
 		methods : {
@@ -48,8 +44,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const AbstractClass4
-	= JS.class('AbstractClass4', {
+	const AbstractClass4 = JS.class('AbstractClass4', {
 		inherits : ConcreteClass,
 
 		fields : {
@@ -57,8 +52,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const AbstractClass5
-	= JS.class('AbstractClass5', {
+	const AbstractClass5 = JS.class('AbstractClass5', {
 		inherits : AbstractClass4,
 
 		fields : {
@@ -66,8 +60,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const AbstractClass6
-	= JS.class('AbstractClass6', {
+	const AbstractClass6 = JS.class('AbstractClass6', {
 		inherits : AbstractClass5,
 
 		fields : {
@@ -75,8 +68,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const ConcreteClass2
-	= JS.class('ConcreteClass2', {
+	const ConcreteClass2 = JS.class('ConcreteClass2', {
 		inherits : AbstractClass5,
 
 		fields : {

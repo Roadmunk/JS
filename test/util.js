@@ -9,15 +9,15 @@ describe('util.js', function() {
 
 		let output;
 
-		const callback1 = function(arg1) {
+		function callback1(arg1) {
 			output = arg1;
-		};
-		const callback2 = function(arg1, arg2, arg3) {
+		}
+		function callback2(arg1, arg2, arg3) {
 			output = arg3;
-		};
-		const callback3 = function(arg1) {
+		}
+		function callback3(arg1) {
 			output = arg1; throw 'adsf';
-		};
+		}
 
 		beforeEach(function() {
 			output = null;
