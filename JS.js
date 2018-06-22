@@ -1,5 +1,5 @@
 if (typeof define !== 'function')  {
-	var define = require('amdefine')(module);
+	var define = require('amdefine')(module); // eslint-disable-line no-var
 }
 
 define(function(require, exports, module) {
@@ -17,37 +17,37 @@ define(function(require, exports, module) {
 	};
 
 	/**
- * Creates a javascript class.
- *
- * For example:
- * JS.class('BaseClass', {
- *    static : {
- *       fields : {
- * 	        static1 : 'hello world'
- *       },
- *       methods : {
- *
- *       }
- *    },
- *
- *    constructor : function() { },
- *
- *    fields : {
- *       instanceField : 1,
- *       instanceField : 2
- *    },
- *
- *    methods : {
- *      run : function(arg1) { },
- *      run2 : { get : function() { } }
- *    }
- * });
- *
- * JS.class('Subclass', {
- * 	  inherits : BaseClass,
- *    mixin    : [ Mixin1, Mixin2 ]
- * });
- */
+	 * Creates a javascript class.
+	 *
+	 * For example:
+	 * JS.class('BaseClass', {
+	 *    static : {
+	 *       fields : {
+	 * 	        static1 : 'hello world'
+	 *       },
+	 *       methods : {
+	 *
+	 *       }
+	 *    },
+	 *
+	 *    constructor : function() { },
+	 *
+	 *    fields : {
+	 *       instanceField : 1,
+	 *       instanceField : 2
+	 *    },
+	 *
+	 *    methods : {
+	 *      run : function(arg1) { },
+	 *      run2 : { get : function() { } }
+	 *    }
+	 * });
+	 *
+	 * JS.class('Subclass', {
+	 * 	  inherits : BaseClass,
+	 *    mixin    : [ Mixin1, Mixin2 ]
+	 * });
+	 */
 	JS.class = function(className, originalProperties) {
 		let clazz, fieldName;
 
@@ -84,7 +84,7 @@ define(function(require, exports, module) {
 		setupSuperClass(clazz, originalProperties);
 
 		// compose final class properties from all original sources
-		const properties = clazz.properties = clone(originalProperties);
+		const properties   = clazz.properties = clone(originalProperties);
 		properties.fields  = {};
 		properties.methods = {};
 		extendPropertiesWithClass(properties, clazz);
@@ -126,7 +126,7 @@ define(function(require, exports, module) {
 	};
 
 	function setupSuperClass(clazz, properties) {
-	// setup super class
+		// setup super class
 		if (properties.inherits && typeof properties.inherits != 'function') {
 			throw new Error(`'inherits' property is specified but is not a function for class: ${clazz.__className__}`);
 		}
@@ -157,10 +157,11 @@ define(function(require, exports, module) {
 	}
 
 	function processFields(clazz) {
-	// normalize fields and invoke fieldDefinition event on each field
-	// done in a loop cause the event hander could add new field definitions
-		let processedFields = {}, unprocessedFields, fieldName;
-		const properties = clazz.properties;
+		// normalize fields and invoke fieldDefinition event on each field
+		// done in a loop cause the event hander could add new field definitions
+		let unprocessedFields, fieldName;
+		const processedFields = {};
+		const properties      = clazz.properties;
 
 		do {
 			unprocessedFields = {};
@@ -179,8 +180,8 @@ define(function(require, exports, module) {
 			for (fieldName in unprocessedFields) {
 				invokeEvent('fieldDefinition', [ clazz, fieldName, unprocessedFields[fieldName] ]);
 
-				if (properties.fields[fieldName] != unprocessedFields[fieldName])	// check if entire field has been replaced
-				{
+				// check if entire field has been replaced
+				if (properties.fields[fieldName] != unprocessedFields[fieldName]) {
 					unprocessedFields[fieldName] = properties.fields[fieldName];
 				}
 
@@ -191,10 +192,10 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Redefines the field definition if short-hand notations are used.
- * @param {any} field definition
- * @return {Object} field object definition (at least contains a type property)
- */
+	 * Redefines the field definition if short-hand notations are used.
+	 * @param {any} field definition
+	 * @return {Object} field object definition (at least contains a type property)
+	 */
 	function normalizeField(field) {
 		switch (typeof field) {
 			case 'undefined':
@@ -246,8 +247,8 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Returns the constructor function from amongst the properties object.
- */
+	 * Returns the constructor function from amongst the properties object.
+	 */
 	function getConstructor(properties, className) {
 		const constructor = properties.hasOwnProperty('constructor') ? properties.constructor : undefined;
 
@@ -259,13 +260,13 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Extends the given properties object with the properties of another class.
- * @param  {Object} properties
- * @param  {BaseClass} clazz - another class from which to copy properties
- * @param  {Object} [options]
- *            {Boolean} [isMixin=false]    if true, clazz is a mixin and properties must be copied
- *            {Boolean} [copyMethods=true] if false, does not copy the .methods key over
- */
+	 * Extends the given properties object with the properties of another class.
+	 * @param  {Object} properties
+	 * @param  {BaseClass} clazz - another class from which to copy properties
+	 * @param  {Object} [options]
+	 *            {Boolean} [isMixin=false]    if true, clazz is a mixin and properties must be copied
+	 *            {Boolean} [copyMethods=true] if false, does not copy the .methods key over
+	 */
 	function extendPropertiesWithClass(properties, clazz, options) {
 		if (!clazz) {
 			return;
@@ -274,7 +275,7 @@ define(function(require, exports, module) {
 
 		const classProperties = originalPropertiesMap.get(clazz);
 		if (!classProperties) {
-		// check if clazz is not a JS.class class
+			// check if clazz is not a JS.class class
 			if (clazz == BaseClass || BaseClass.isPrototypeOf(clazz)) {
 				throw new Error(`invalid class: ${clazz}`);
 			}
@@ -374,11 +375,11 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Provides a standard getter function that returns the value of the given property of this object.
- * @param {string} property is the name of another property of the class whose value to retrieve
- * @param {object} options is an optional list of additional parameters:
- *                 {boolean} asFunction, invokes the specified property as a function
- */
+	 * Provides a standard getter function that returns the value of the given property of this object.
+	 * @param {string} property is the name of another property of the class whose value to retrieve
+	 * @param {object} options is an optional list of additional parameters:
+	 *                 {boolean} asFunction, invokes the specified property as a function
+	 */
 	JS.getter = function(property, options) {
 		options = options || {};
 
@@ -395,11 +396,11 @@ define(function(require, exports, module) {
 	};
 
 	/**
- * Provides a standard setter function that sets the value of the given property of this object.
- * @param {string} property is the name of another property of the class whose value to set
- * @param {object} options is an optional list of additional parameters:
- *                 {boolean} asFunction, invokes the specified property as a function with the value as the only parameter
- */
+	 * Provides a standard setter function that sets the value of the given property of this object.
+	 * @param {string} property is the name of another property of the class whose value to set
+	 * @param {object} options is an optional list of additional parameters:
+	 *                 {boolean} asFunction, invokes the specified property as a function with the value as the only parameter
+	 */
 	JS.setter = function(property, options) {
 		options = options || {};
 
@@ -417,19 +418,19 @@ define(function(require, exports, module) {
 		};
 	};
 
+	const classEvents = {
+		fieldDefinition : [],
+	};
+
 	/**
- * Registers callbacks for JS.class events.
- */
+	 * Registers callbacks for JS.class events.
+	 */
 	JS.class.on = function(eventName, callback) {
 		if (classEvents[eventName] === undefined) {
 			throw new Error(`JS.class.on: unknown event name: ${eventName}`);
 		}
 
 		classEvents[eventName].push(callback);
-	};
-
-	var classEvents = {
-		fieldDefinition : [],
 	};
 
 	function invokeEvent(eventName, args) {
@@ -439,12 +440,12 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Initializes a new instance of the class or creates an instance of a baseClass (casting).
- * Calls constructors in parent chain and adds fields.
- * @param {Mixed[]} args array of arguments to pass to user constructors
- */
+	 * Initializes a new instance of the class or creates an instance of a baseClass (casting).
+	 * Calls constructors in parent chain and adds fields.
+	 * @param {Mixed[]} args array of arguments to pass to user constructors
+	 */
 	function createFunction(args) {
-	// createFunctionHelper is separate in hopes of having it optimized since a try statement tends to kill JS VM optimization
+		// createFunctionHelper is separate in hopes of having it optimized since a try statement tends to kill JS VM optimization
 		try {
 			constructionStack.push(this);
 			return createFunctionHelper.call(this, createFunction.caller, args);
@@ -455,7 +456,7 @@ define(function(require, exports, module) {
 	}
 
 	function createFunctionHelper(clazz, args) {
-	// regular instance initialization
+		// regular instance initialization
 		if (this instanceof clazz) {
 			if (clazz.properties === undefined) {
 				throw new Error(`cannot instantiate stub class: ${this.constructor.__className__}`);
@@ -466,7 +467,7 @@ define(function(require, exports, module) {
 
 			// if called recursively, then it's a casting instance creation (don't call constructors)
 			if (!constructingThis || !recursiveCall) {
-			// check for abstract class only if this is the top-level call (ie. not a base-class constructor call)
+				// check for abstract class only if this is the top-level call (ie. not a base-class constructor call)
 				if (constructingThis && BaseClass.isAbstract.call(clazz)) {
 					const methodName = BaseClass.abstractMethodName.call(clazz);
 					const fieldName  = BaseClass.abstractFieldName.call(clazz);
@@ -507,10 +508,10 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Helper function that calls user constructors. (including ancestor classes)
- * The context (this) must be the instance of the class.
- * All arguments are passed to the user constructor.
- */
+	 * Helper function that calls user constructors. (including ancestor classes)
+	 * The context (this) must be the instance of the class.
+	 * All arguments are passed to the user constructor.
+	 */
 	function callUserConstructors() {
 		function helper(clazz, instance, args) {
 			if (clazz && clazz.properties) {
@@ -528,11 +529,11 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Helper function that creates methods on the class.
- * Expects to be called in the context of the class object.
- * @param  {Object} definitions the class property definitions object
- * @param  {Object} destination where to add the new method
- */
+	 * Helper function that creates methods on the class.
+	 * Expects to be called in the context of the class object.
+	 * @param  {Object} definitions the class property definitions object
+	 * @param  {Object} destination where to add the new method
+	 */
 	function createMethods(definitions, destination) {
 		for (const name in definitions) {
 			let method = definitions[name];
@@ -564,7 +565,7 @@ define(function(require, exports, module) {
 					Object.defineProperty(destination, name, descriptor);
 				}
 				else if (typeof method.$super == 'function') {
-				// get the base class's method with the same name
+					// get the base class's method with the same name
 					const superMethod = getSuperMethod({
 						methodType : 'method',
 						methodName : name,
@@ -573,8 +574,8 @@ define(function(require, exports, module) {
 					// get the final method for this class that can include a call to the superMethod
 					method = method.$super.call(this, superMethod);
 				}
-				else if (name[0] === '$')		// it's a region
-				{
+				else if (name[0] === '$') {
+					// it's a region
 					createMethods.call(this, method, destination);
 				}
 			}
@@ -591,15 +592,14 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Helper function that creates fields which are getters/setters on the class.
- * Expects to be called in the context of the class object.
- * @param  {Object} definitions the class property definitions object
- * @param  {Object} destination where to add the new fields
- */
+	 * Helper function that creates fields which are getters/setters on the class.
+	 * Expects to be called in the context of the class object.
+	 * @param  {Object} definitions the class property definitions object
+	 * @param  {Object} destination where to add the new fields
+	 */
 	function createGettersSetters(definitions, destination) {
-		'use strict';
 		for (const name in definitions) {
-		// normalize again just to be sure
+			// normalize again just to be sure
 			const field = definitions[name] = normalizeField(definitions[name]);
 
 			// define non-value fields (ie. getters/setters)
@@ -631,11 +631,11 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Helper function that adds the given fields to this object.
- * Expects to be called in the context of the class object.
- * @param {Object} fields - field definitions with keys being the field names and values being the field properties
- * @param {Object} [initialValues] - takes initial values for the fields from this object if provided
- */
+	 * Helper function that adds the given fields to this object.
+	 * Expects to be called in the context of the class object.
+	 * @param {Object} fields - field definitions with keys being the field names and values being the field properties
+	 * @param {Object} [initialValues] - takes initial values for the fields from this object if provided
+	 */
 	function createFields(fields, initialValues) {
 		const sortedFieldNames = getSortedFieldNames(fields);
 		const len              = sortedFieldNames.length;
@@ -647,11 +647,11 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Helper function that returns an array of this class' field names, sorted in their initialization order
- * (i.e. fields with `initDependencies` appear in the array after all of their dependencies)
- */
+	 * Helper function that returns an array of this class' field names, sorted in their initialization order
+	 * (i.e. fields with `initDependencies` appear in the array after all of their dependencies)
+	 */
 	function getSortedFieldNames(fields) {
-	// optimize by memoizing the result and attaching it to `fields`
+		// optimize by memoizing the result and attaching it to `fields`
 		if (!fields.hasOwnProperty('___fieldsSortedInInitializationOrder')) {
 			const sortedFields = [];
 
@@ -669,12 +669,12 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Helper function for `getSortedFieldNames` to process a field and recursively process the field's init dependencies
- * @param  {Object}      fields          All field definitions
- * @param  {String}      fieldName       The name of the specific field to process
- * @param  {String[]}    sortedFields    Array of already processed fields, which this field should be added to once processed
- * @param  {Set<String>} [visitedFields] The field names which have already been visited, in the current recursive callstack.
- */
+	 * Helper function for `getSortedFieldNames` to process a field and recursively process the field's init dependencies
+	 * @param  {Object}      fields          All field definitions
+	 * @param  {String}      fieldName       The name of the specific field to process
+	 * @param  {String[]}    sortedFields    Array of already processed fields, which this field should be added to once processed
+	 * @param  {Set<String>} [visitedFields] The field names which have already been visited, in the current recursive callstack.
+	 */
 	function processField(fields, fieldName, sortedFields, visitedFields) {
 		if (sortedFields.includes(fieldName)) {
 			return;
@@ -700,11 +700,11 @@ define(function(require, exports, module) {
 
 
 	/**
- * Returns the initial value for a field.
- * @param  {Object | Function} instance is the instance of the class or the class itself if the field is static
- * @param  {Object | String} field the field specification or field name
- * @return {*}
- */
+	 * Returns the initial value for a field.
+	 * @param  {Object | Function} instance is the instance of the class or the class itself if the field is static
+	 * @param  {Object | String} field the field specification or field name
+	 * @return {*}
+	 */
 	JS.class.initialFieldValue = function(instance, field) {
 		if (typeof field == 'string') {
 			field = (instance.constructor || instance).getFieldProperties(field);
@@ -741,26 +741,23 @@ define(function(require, exports, module) {
 	};
 
 	/**
- * Makes a proxy function that, if nessecary, updates the method's `superStack` callstack for the instance invoking the method,
- * pushing the current invocation onto the top of the stack. This is nessecary to allow for recursive/cyclic super calls.
- *
- * NOTE: a method must be proxied using this function *before* any properties are assigned to it.
- *
- * @param  {function} method
- * @return {function}
- */
+	 * Makes a proxy function that, if nessecary, updates the method's `superStack` callstack for the instance invoking the method,
+	 * pushing the current invocation onto the top of the stack. This is nessecary to allow for recursive/cyclic super calls.
+	 *
+	 * NOTE: a method must be proxied using this function *before* any properties are assigned to it.
+	 *
+	 * @param  {function} method
+	 * @return {function}
+	 */
 	function makeSuperStackUpdaterProxy(method) {
-		'use strict';
-
 		// check if the method doesn't even contain a call to it's super method
 		if (method.toString().indexOf('.super.') === -1) {
 			return method;
 		}
 
 		return function proxy(...args) {
-		/* Note: superStack is a map of instance to an array of callstack methods on that instance,
-		 * and is initialized on the first invocation of `super` for each method (@see makeSuperMethodProxy())
-		 */
+			/* Note: superStack is a map of instance to an array of callstack methods on that instance,
+			 * and is initialized on the first invocation of `super` for each method (@see makeSuperMethodProxy()) */
 
 			const instanceStack = proxy.superStack ? proxy.superStack.get(this) : null;	// the super callstack for `this` instance, if any exists
 			if (instanceStack && instanceStack.length && instanceStack[instanceStack.length - 1] != proxy) {
@@ -778,10 +775,10 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Returns the method that the given method overrides.
- * @param {Function} method  the method whose super method to find
- * @param {JS.Class} clazz   the class upon which the method is being called
- */
+	 * Returns the method that the given method overrides.
+	 * @param {Function} method  the method whose super method to find
+	 * @param {JS.Class} clazz   the class upon which the method is being called
+	 */
 	function getSuperMethod(method, clazz) {
 		let parentClass = clazz.__parentClass__;
 
@@ -810,13 +807,13 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Returns method that invokes the next super method in the chain.
- * Note that this.method.super is always called on the leaf-most method implementation.
- * Since a super method could also call this.method.super, we maintain a stack of calls to super so that we can properly progress through the chain.
- */
+	 * Returns method that invokes the next super method in the chain.
+	 * Note that this.method.super is always called on the leaf-most method implementation.
+	 * Since a super method could also call this.method.super, we maintain a stack of calls to super so that we can properly progress through the chain.
+	 */
 	function makeSuperMethodProxy(method) {
 		return function(...args) {
-		// superStack is a map of instance to an array of callstack methods on that instance
+			// superStack is a map of instance to an array of callstack methods on that instance
 			if (method.superStack === undefined) {
 				method.superStack = new Map();
 			}
@@ -852,12 +849,12 @@ define(function(require, exports, module) {
 	}
 
 	/**
- * Returns whether the given class is or is a subclass of the given class.
- * @param {Function} possibleSubclass
- * @param {Function | String | Object} ancestorClass or className or object instance of the ancestor class
- * @param {Boolean} [properSubclass=false] if true, possibleClass must be a proper subclass of ancestorClass (cannot be the same class)
- * @return {Boolean}
- */
+	 * Returns whether the given class is or is a subclass of the given class.
+	 * @param {Function} possibleSubclass
+	 * @param {Function | String | Object} ancestorClass or className or object instance of the ancestor class
+	 * @param {Boolean} [properSubclass=false] if true, possibleClass must be a proper subclass of ancestorClass (cannot be the same class)
+	 * @return {Boolean}
+	 */
 	JS.class.isSubclass = function(possibleSubclass, ancestorClass, properSubclass) {
 		if (!possibleSubclass || !ancestorClass) {
 			return false;
@@ -880,11 +877,11 @@ define(function(require, exports, module) {
 	};
 
 	/**
- * Returns whether the given class includes the provided mixin
- * @param  {Function}  possibleClass
- * @param  {Function}  mixin
- * @return {Boolean}
- */
+	 * Returns whether the given class includes the provided mixin
+	 * @param  {Function}  possibleClass
+	 * @param  {Function}  mixin
+	 * @return {Boolean}
+	 */
 	JS.class.hasMixin = function(possibleClass, mixin) {
 		if (!possibleClass || !mixin) {
 			return false;
@@ -902,10 +899,10 @@ define(function(require, exports, module) {
 	};
 
 	/**
- * Returns true if the given parameter is an instance of a class and is currently in the process of being
- * constructed.
- * @param {Object} instance
- */
+	 * Returns true if the given parameter is an instance of a class and is currently in the process of being
+	 * constructed.
+	 * @param {Object} instance
+	 */
 	JS.class.isUnderConstruction = function(instance) {
 		return constructionStack.indexOf(instance) >= 0;
 	};
@@ -919,45 +916,45 @@ define(function(require, exports, module) {
 
 	JS.class(BaseClass, {
 		methods : {
-		/**
-		 * Default toString() method for all class instances.
-		 */
+			/**
+			 * Default toString() method for all class instances.
+			 */
 			toString : function() {
 				return `[object ${this.constructor.__className__}]`;
 			},
 
 			/**
-		 * Instance version of the static forEachField.
-		 * @see static.forEachField
-		 */
+			 * Instance version of the static forEachField.
+			 * @see static.forEachField
+			 */
 			forEachField : function(callback) {
 				this.constructor.forEachField.call(this.constructor, callback);
 			},
 
 			/**
-		 * Gets called after the instance has been constructed.
-		 * Can be overriden in instance classes to provide post-construction functionality.
-		 */
+			 * Gets called after the instance has been constructed.
+			 * Can be overriden in instance classes to provide post-construction functionality.
+			 */
 			afterCreateInstance : function() {},
 		},
 
 		static : {
 			methods : {
-			/**
-			 * Returns whether this class is or is a subclass of the given class.
-			 * @param {Function | String | Object} ancestorClass or className or object instance of the ancestor class
-			 * @return {Boolean}
-			 */
+				/**
+				 * Returns whether this class is or is a subclass of the given class.
+				 * @param {Function | String | Object} ancestorClass or className or object instance of the ancestor class
+				 * @return {Boolean}
+				 */
 				isSubclass : function(ancestorClass) {
 					return JS.class.isSubclass(this, ancestorClass);
 				},
 
 				/**
-			 * Returns whether this class has a particular mixin.
-			 * Mixins are checked in any ancestor classes as well as mixins of mixins.
-			 * @param  {Function} mixinClass
-			 * @return {Boolean}
-			 */
+				 * Returns whether this class has a particular mixin.
+				 * Mixins are checked in any ancestor classes as well as mixins of mixins.
+				 * @param  {Function} mixinClass
+				 * @return {Boolean}
+				 */
 				hasMixin : function(mixinClass) {
 					for (let a = 0; a < this.properties.mixin.length; a++) {
 						const mixin = this.properties.mixin[a];
@@ -980,10 +977,10 @@ define(function(require, exports, module) {
 				},
 
 				/**
-			 * Returns whether this class is an abstract class that contains abstract methods or fields.
-			 * Abstract classes cannot be instatiated as is; they need to be subclassed and all
-			 * abstract methods/fields need to be implemented.
-			 */
+				 * Returns whether this class is an abstract class that contains abstract methods or fields.
+				 * Abstract classes cannot be instatiated as is; they need to be subclassed and all
+				 * abstract methods/fields need to be implemented.
+				 */
 				isAbstract : function() {
 					if (!this.hasOwnProperty('__abstract')) {
 						const implementedMethods = {};
@@ -991,7 +988,7 @@ define(function(require, exports, module) {
 						let currentClass       = this;
 
 						while (currentClass && currentClass.properties && !this.hasOwnProperty('__abstract')) {
-						// COULDDO: don't repeat these blocks - makes it a little more difficult to differentiate fields from methods
+							// COULDDO: don't repeat these blocks - makes it a little more difficult to differentiate fields from methods
 							for (const methodName in currentClass.properties.methods) {
 								if (currentClass.properties.methods[methodName].abstract && implementedMethods[methodName] === undefined) {
 									this.__abstract = true;
@@ -1023,36 +1020,36 @@ define(function(require, exports, module) {
 				},
 
 				/**
-			 * If this class is an abstract class, then this method returns the name of
-			 * an un-implemented method.  This is useful for debugging.
-			 *
-			 * @returns {String}
-			 */
+				 * If this class is an abstract class, then this method returns the name of
+				 * an un-implemented method.  This is useful for debugging.
+				 *
+				 * @returns {String}
+				 */
 				abstractMethodName : function() {
 					return this.__abstractMethodName;
 				},
 
 				/**
-			 * If this class is an abstract class, then this method returns the name of
-			 * an un-implemented field.  This is useful for debugging.
-			 *
-			 * @returns {String}
-			 */
+				 * If this class is an abstract class, then this method returns the name of
+				 * an un-implemented field.  This is useful for debugging.
+				 *
+				 * @returns {String}
+				 */
 				abstractFieldName : function() {
 					return this.__abstractFieldName;
 				},
 
 				/**
-			 * Invokes the specified callback function for every field in this class as well as any ancestor classes.
-			 * @param {Function} callback is invoked for every field with the following parameters:
-			 *           {String} the name of the field
-			 *           {Object} the field definition properties (meta data)
-			 */
+				 * Invokes the specified callback function for every field in this class as well as any ancestor classes.
+				 * @param {Function} callback is invoked for every field with the following parameters:
+				 *           {String} the name of the field
+				 *           {Object} the field definition properties (meta data)
+				 */
 				forEachField : function(callback) {
 					const fields     = this.properties.fields;
 					const fieldNames = getSortedFieldNames(fields);
 					const length     = fieldNames.length;
-					let index      = 0;
+					let index        = 0;
 					while (index < length) {
 						if (callback(fieldNames[index], fields[fieldNames[index]]) === false) {
 							return;
@@ -1062,21 +1059,21 @@ define(function(require, exports, module) {
 				},
 
 				/**
-			 * Returns the field properties for this class and field.
-			 * @param  {String}   fieldName is the name of the field whose properties to return
-			 * @return {Object}   the field's properties or null if no such field was found
-			 */
+				 * Returns the field properties for this class and field.
+				 * @param  {String}   fieldName is the name of the field whose properties to return
+				 * @return {Object}   the field's properties or null if no such field was found
+				 */
 				getFieldProperties : function(fieldName) {
 					return this.properties.fields[fieldName];
 				},
 
 				/**
-			 * Gets called everytime there is a subclass of this class declared.
-			 * Can be overridden to create special behaviour.
-			 * @param  {Function} subclass
-			 */
+				 * Gets called everytime there is a subclass of this class declared.
+				 * Can be overridden to create special behaviour.
+				 * @param  {Function} subclass
+				 */
 				afterCreateClass : function(subclass) {
-				/* eslint no-unused-vars:0 */
+					/* eslint no-unused-vars:0 */
 				},
 			},
 		},
@@ -1086,12 +1083,12 @@ define(function(require, exports, module) {
 	JS.util = {};
 
 	/**
- * Does a call to the given function (it provided) and trapping any exceptions.
- * Useful when dealing with callback functions.
- * @param  {Function}   func
- * @param  {Array()}    args
- * @param  {Object}     context is an optional calling context so that inside func, this === context
- */
+	 * Does a call to the given function (it provided) and trapping any exceptions.
+	 * Useful when dealing with callback functions.
+	 * @param  {Function}   func
+	 * @param  {Array()}    args
+	 * @param  {Object}     context is an optional calling context so that inside func, this === context
+	 */
 	JS.util.callback = function callback(func, args, context) {
 		if (context === undefined) {
 			context = null;
@@ -1112,11 +1109,11 @@ define(function(require, exports, module) {
 	};
 
 	/**
- * Creates/ammends the given object with the given set of default properties.
- * @param  {Object|undefined} object   the object whose properties to ammend
- * @param  {Object}           defaults the map of keys/values to ensure exist in the result object
- * @return {Object}
- */
+	 * Creates/ammends the given object with the given set of default properties.
+	 * @param  {Object|undefined} object   the object whose properties to ammend
+	 * @param  {Object}           defaults the map of keys/values to ensure exist in the result object
+	 * @return {Object}
+	 */
 	function defaults(object, defaultValues) {
 		if (!object) {
 			return defaultValues;
@@ -1136,11 +1133,11 @@ define(function(require, exports, module) {
 	JS.util.defaults = defaults;	// done this way so the function can be used in JS.class before this is defined
 
 	/**
- * Returns a function that returns a new instance of the given constructor passing along
- * any parameters.  Useful for factory methods.
- * @param  {Function} constructor the constructor function for resultant instances
- * @return {Function}
- */
+	 * Returns a function that returns a new instance of the given constructor passing along
+	 * any parameters.  Useful for factory methods.
+	 * @param  {Function} constructor the constructor function for resultant instances
+	 * @return {Function}
+ 	*/
 	JS.util.createFactory = function(constructor) {
 		return function() {
 			return new (constructor.bind(...[ null ].concat(Array.prototype.slice.call(arguments))))();
@@ -1148,11 +1145,11 @@ define(function(require, exports, module) {
 	};
 
 	/**
- * Ensures that the given value is either an array or turned into an array.
- * Null and undefined are treated as empty arrays.
- * @param  {*} value
- * @return {Array} if value is already an Array, value; otherwise a new Array containing value as it's only element
- */
+	 * Ensures that the given value is either an array or turned into an array.
+	 * Null and undefined are treated as empty arrays.
+	 * @param  {*} value
+	 * @return {Array} if value is already an Array, value; otherwise a new Array containing value as it's only element
+	 */
 	function ensureArray(value) {
 		if (value === undefined || value === null) {
 			return [];
@@ -1165,15 +1162,15 @@ define(function(require, exports, module) {
 	JS.util.ensureArray = ensureArray;	// done this way so the function can be used in JS.class before this is defined
 
 	/**
- * Replaces an object's property that is a function with another but gives the new
- * function access to the old replaced function during calling.
- * @param  {Object}   object      object whose property to replace
- * @param  {String}   property    the name of the property to replace (value must be a function)
- * @param  {Function} newFunction the replacement function
- *                                it's called with the same parameters as the original but with an extra
- *                                first paramter that is a reference to the original function
- * @returns {Function} the original function that is being proxied
- */
+	 * Replaces an object's property that is a function with another but gives the new
+	 * function access to the old replaced function during calling.
+	 * @param  {Object}   object      object whose property to replace
+	 * @param  {String}   property    the name of the property to replace (value must be a function)
+	 * @param  {Function} newFunction the replacement function
+	 *                                it's called with the same parameters as the original but with an extra
+	 *                                first paramter that is a reference to the original function
+	 * @returns {Function} the original function that is being proxied
+	 */
 	JS.util.proxy = function(object, property, newFunction) {
 		const oldFunc = object[property];
 
@@ -1201,10 +1198,10 @@ define(function(require, exports, module) {
 	};
 
 	/**
- * Returns a deep copy of the given object.
- * @param  {Object} obj
- * @return {Object}
- */
+	 * Returns a deep copy of the given object.
+	 * @param  {Object} obj
+	 * @return {Object}
+	 */
 	function clone(obj) {
 		if (!obj || typeof obj != 'object') {
 			return obj;
@@ -1227,13 +1224,13 @@ define(function(require, exports, module) {
 	JS.util.clone = clone;
 
 	/**
- * Helper function that runs two functions in a try-finally block, but will only run the `finallyBlock`
- * function after any promises returned from the `tryBlock` function has fulfilled/rejected.
- * The `finallyBlock` function will only ever be invoked once.
- * @param  {Function} tryBlock       A (possibly asynchronous) function to be run in the `try` block
- * @param  {Function} [finallyBlock] A (synchronous) function to be run after the `tryBlock` function has executed and any returned promise has resolved
- * @return {*}                       return value of the `tryBlock`
- */
+	 * Helper function that runs two functions in a try-finally block, but will only run the `finallyBlock`
+	 * function after any promises returned from the `tryBlock` function has fulfilled/rejected.
+	 * The `finallyBlock` function will only ever be invoked once.
+	 * @param  {Function} tryBlock       A (possibly asynchronous) function to be run in the `try` block
+	 * @param  {Function} [finallyBlock] A (synchronous) function to be run after the `tryBlock` function has executed and any returned promise has resolved
+	 * @return {*}                       return value of the `tryBlock`
+	 */
 	function possiblyAsyncTryFinally(tryBlock, finallyBlock) {
 		let isAsync = false;
 		try {
