@@ -57,7 +57,7 @@ define(function(require, exports, module) {
 			className = originalProperties.inherits.__className__;
 		}
 
-		if (typeof className == 'string') {
+		if (typeof className === 'string') {
 			const shortClassName = className.match(/[a-zA-Z0-9_]*$/)[0];	// take the last alphanum word since it must be a Javascript name
 
 			// using eval here so that the className will be used in the function definition (shows in debuggers and such which makes debugging easier)
@@ -127,7 +127,7 @@ define(function(require, exports, module) {
 
 	function setupSuperClass(clazz, properties) {
 		// setup super class
-		if (properties.inherits && typeof properties.inherits != 'function') {
+		if (properties.inherits && typeof properties.inherits !== 'function') {
 			throw new Error(`'inherits' property is specified but is not a function for class: ${clazz.__className__}`);
 		}
 
@@ -167,7 +167,7 @@ define(function(require, exports, module) {
 			unprocessedFields = {};
 
 			for (fieldName in properties.fields) {
-				if (properties.fields[fieldName] != processedFields[fieldName]) {
+				if (properties.fields[fieldName] !== processedFields[fieldName]) {
 					unprocessedFields[fieldName] = properties.fields[fieldName];
 				}
 			}
@@ -181,7 +181,7 @@ define(function(require, exports, module) {
 				invokeEvent('fieldDefinition', [ clazz, fieldName, unprocessedFields[fieldName] ]);
 
 				// check if entire field has been replaced
-				if (properties.fields[fieldName] != unprocessedFields[fieldName]) {
+				if (properties.fields[fieldName] !== unprocessedFields[fieldName]) {
 					unprocessedFields[fieldName] = properties.fields[fieldName];
 				}
 
@@ -235,7 +235,7 @@ define(function(require, exports, module) {
 						field.init = 0;
 					}
 				}
-				else if (typeof field.type != 'function') {
+				else if (typeof field.type !== 'function') {
 					const a = normalizeField(field.type);
 					field.type = a.type;
 					field.init = field.init === undefined ? a.init : field.init;
@@ -276,7 +276,7 @@ define(function(require, exports, module) {
 		const classProperties = originalPropertiesMap.get(clazz);
 		if (!classProperties) {
 			// check if clazz is not a JS.class class
-			if (clazz == BaseClass || BaseClass.isPrototypeOf(clazz)) {
+			if (clazz === BaseClass || BaseClass.isPrototypeOf(clazz)) {
 				throw new Error(`invalid class: ${clazz}`);
 			}
 
@@ -358,11 +358,11 @@ define(function(require, exports, module) {
 				}
 
 				else {
-					const method = makeWrapper(sourceMethod);
+					const method      = makeWrapper(sourceMethod);
 					method.methodType = 'method';
 					method.methodName = methodName;
 					method.__class__  = clazz;
-					dest[methodName] = method;
+					dest[methodName]  = method;
 				}
 			}
 		}
@@ -407,7 +407,7 @@ define(function(require, exports, module) {
 		if (options.asFunction) {
 			return function(value) {
 				const prop = this[property];
-				if (typeof prop == 'function') {
+				if (typeof prop === 'function') {
 					prop(value);
 				}
 			};
@@ -538,7 +538,7 @@ define(function(require, exports, module) {
 		for (const name in definitions) {
 			let method = definitions[name];
 
-			if (typeof method == 'object') {
+			if (typeof method === 'object') {
 				if (typeof method.get === 'function' || typeof method.set === 'function') {
 					const descriptor = {
 						enumerable   : false,
@@ -580,7 +580,7 @@ define(function(require, exports, module) {
 				}
 			}
 
-			if (typeof method == 'function') {
+			if (typeof method === 'function') {
 				method = makeSuperStackUpdaterProxy(method);
 				method.methodType = 'method';
 				method.methodName = name;
@@ -641,7 +641,7 @@ define(function(require, exports, module) {
 		const len              = sortedFieldNames.length;
 
 		for (let a = 0; a < len; a++) {
-			const fieldName   = sortedFieldNames[a];
+			const fieldName = sortedFieldNames[a];
 			this[fieldName] = initialValues ? initialValues[fieldName] : JS.class.initialFieldValue(this, fields[fieldName]);
 		}
 	}
@@ -706,12 +706,12 @@ define(function(require, exports, module) {
 	 * @return {*}
 	 */
 	JS.class.initialFieldValue = function(instance, field) {
-		if (typeof field == 'string') {
+		if (typeof field === 'string') {
 			field = (instance.constructor || instance).getFieldProperties(field);
 		}
 
 		// check if this is a getter field (with no setter thus not writable) then do nothing
-		if (typeof field.get == 'function' && typeof field.set == 'undefined') {
+		if (typeof field.get === 'function' && typeof field.set === 'undefined') {
 			return undefined;
 		}
 
@@ -789,13 +789,13 @@ define(function(require, exports, module) {
 		while (parentClass !== undefined) {
 			const desc = Object.getOwnPropertyDescriptor(parentClass.prototype, method.methodName);
 			if (desc) {
-				if (method.methodType == 'method' && typeof desc.value == 'function') {
+				if (method.methodType === 'method' && typeof desc.value === 'function') {
 					return desc.value;
 				}
-				if (method.methodType == 'get' && typeof desc.get === 'function') {
+				if (method.methodType === 'get' && typeof desc.get === 'function') {
 					return desc.get;
 				}
-				if (method.methodType == 'set' && typeof desc.set === 'function') {
+				if (method.methodType === 'set' && typeof desc.set === 'function') {
 					return desc.set;
 				}
 				throw new Error(`this method/field does not override the proper property type: ${method.methodName}`);
@@ -860,7 +860,7 @@ define(function(require, exports, module) {
 			return false;
 		}
 
-		if (typeof ancestorClass == 'object') {
+		if (typeof ancestorClass === 'object') {
 			ancestorClass = ancestorClass.constructor;
 		}
 
@@ -907,9 +907,11 @@ define(function(require, exports, module) {
 		return constructionStack.indexOf(instance) >= 0;
 	};
 
-	Object.defineProperty(JS.class.isUnderConstruction, 'stackSize', { get : function() {
-		return constructionStack.length;
-	} });
+	Object.defineProperty(JS.class.isUnderConstruction, 'stackSize', {
+		get : function() {
+			return constructionStack.length;
+		},
+	});
 
 	// The prototype object of all Classes
 	const BaseClass = JS.class.BaseClass = JS.class('BaseClass');	// create a stub for the BaseClass in order to solve the circular reference when defining a class
@@ -961,15 +963,15 @@ define(function(require, exports, module) {
 						if (mixin === mixinClass) {
 							return true;
 						}
-						if (typeof mixin.hasMixin   == 'function' && mixin.hasMixin(mixinClass))   {
+						if (typeof mixin.hasMixin === 'function' && mixin.hasMixin(mixinClass))   {
 							return true;
 						}
-						if (typeof mixin.isSubclass == 'function' && mixin.isSubclass(mixinClass)) {
+						if (typeof mixin.isSubclass === 'function' && mixin.isSubclass(mixinClass)) {
 							return true;
 						}
 					}
 
-					if (this.__parentClass__ && typeof this.__parentClass__.hasMixin == 'function' && this.__parentClass__.hasMixin(mixinClass)) {
+					if (this.__parentClass__ && typeof this.__parentClass__.hasMixin === 'function' && this.__parentClass__.hasMixin(mixinClass)) {
 						return true;
 					}
 
@@ -985,13 +987,13 @@ define(function(require, exports, module) {
 					if (!this.hasOwnProperty('__abstract')) {
 						const implementedMethods = {};
 						const implementedFields  = {};
-						let currentClass       = this;
+						let currentClass         = this;
 
 						while (currentClass && currentClass.properties && !this.hasOwnProperty('__abstract')) {
 							// COULDDO: don't repeat these blocks - makes it a little more difficult to differentiate fields from methods
 							for (const methodName in currentClass.properties.methods) {
 								if (currentClass.properties.methods[methodName].abstract && implementedMethods[methodName] === undefined) {
-									this.__abstract = true;
+									this.__abstract           = true;
 									this.__abstractMethodName = methodName;
 									break;
 								}
@@ -999,7 +1001,7 @@ define(function(require, exports, module) {
 							}
 							for (const fieldName in currentClass.properties.fields) {
 								if (currentClass.properties.fields[fieldName].abstract && implementedFields[fieldName] === undefined) {
-									this.__abstract = true;
+									this.__abstract          = true;
 									this.__abstractFieldName = fieldName;
 									break;
 								}
@@ -1095,7 +1097,7 @@ define(function(require, exports, module) {
 		}
 
 		try {
-			if (typeof func == 'function') {
+			if (typeof func === 'function') {
 				func.apply(context, args);
 			}
 		}
@@ -1103,7 +1105,7 @@ define(function(require, exports, module) {
 			(console.error || console.log)(e.stack || e.message || e);
 		}
 
-		if (func && typeof func != 'function') {
+		if (func && typeof func !== 'function') {
 			throw new Error(`callback is not a function: ${func}`);
 		}
 	};
@@ -1119,8 +1121,8 @@ define(function(require, exports, module) {
 			return defaultValues;
 		}
 
-		const keys  = Object.keys(object);
-		let index = keys.length;
+		const keys = Object.keys(object);
+		let index  = keys.length;
 		while (index--) {
 			const key = keys[index];
 			if (object.hasOwnProperty(key)) {
@@ -1174,18 +1176,18 @@ define(function(require, exports, module) {
 	JS.util.proxy = function(object, property, newFunction) {
 		const oldFunc = object[property];
 
-		if (typeof oldFunc != 'function') {
+		if (typeof oldFunc !== 'function') {
 			throw new Error(`property value must be a function: ${property}`);
 		}
 
-		if (typeof newFunction != 'function') {
+		if (typeof newFunction !== 'function') {
 			throw new Error(`newFunction must be a function: ${newFunction}`);
 		}
 
 		object[property] = function() {
-			const len = arguments.length;
-			const args  = new Array(len + 1);
-			args[0]   = oldFunc;
+			const len  = arguments.length;
+			const args = new Array(len + 1);
+			args[0]    = oldFunc;
 
 			for (let a = 0; a < len; a++) {
 				args[a + 1] = arguments[a];
@@ -1203,7 +1205,7 @@ define(function(require, exports, module) {
 	 * @return {Object}
 	 */
 	function clone(obj) {
-		if (!obj || typeof obj != 'object') {
+		if (!obj || typeof obj !== 'object') {
 			return obj;
 		}
 
@@ -1213,7 +1215,7 @@ define(function(require, exports, module) {
 				continue;
 			}
 			let val = obj[key];
-			if (val && typeof val == 'object') {
+			if (val && typeof val === 'object') {
 				val = clone(val);
 			}
 			result[key] = val;

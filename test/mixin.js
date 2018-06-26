@@ -221,7 +221,7 @@ describe('mixin', function() {
 		expect(Base.isAbstract()).to.be.true;
 		expect(Sub.isAbstract()).to.be.false;
 
-		const sub  = new Sub();
+		const sub = new Sub();
 		expect(sub.method4()).to.equal('method4');
 	});
 
