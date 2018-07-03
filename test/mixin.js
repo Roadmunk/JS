@@ -1,27 +1,29 @@
 'use strict';
 
-var JS     = require('../JS');
-var expect = require('chai').expect;
+const JS     = require('../JS');
+const expect = require('chai').expect;
 
 describe('mixin', function() {
 
-	var Foo1 = JS.class('Foo1');
-	var Foo2 = JS.class('Foo2');
-	var Foo3 = JS.class('Foo3');
-	var Foo4 = JS.class('Foo4');
-	var Bar  = JS.class('Bar');
-	var Bar2 = JS.class('Bar2');
-	var Bar3 = JS.class('Bar3');
+	const Foo1 = JS.class('Foo1');
+	const Foo2 = JS.class('Foo2');
+	const Foo3 = JS.class('Foo3');
+	const Foo4 = JS.class('Foo4');
+	const Bar  = JS.class('Bar');
+	const Bar2 = JS.class('Bar2');
+	const Bar3 = JS.class('Bar3');
 
 	JS.class(Foo1, {
 		fields : {
 			field1 : {
-				type : Date
-			}
+				type : Date,
+			},
 		},
 		methods : {
-			method1 : function() { return 'method1' }
-		}
+			method1 : function() {
+				return 'method1';
+			},
+		},
 	});
 
 	JS.class(Foo2, {
@@ -29,65 +31,69 @@ describe('mixin', function() {
 
 		fields : {
 			field2 : '',
-			field3 : 0
+			field3 : 0,
 		},
 
 		methods : {
-			method2 : function() { return 'method2'; }
+			method2 : function() {
+				return 'method2';
+			},
 		},
 		static : {
 			fields : {
-				staticField1 : 'staticField1'
+				staticField1 : 'staticField1',
 			},
 			methods : {
-				staticMethod1 : function() { return 'staticMethod1'; }
-			}
-		}
+				staticMethod1 : function() {
+					return 'staticMethod1';
+				},
+			},
+		},
 	});
 
 	JS.class(Foo3, {});
 
 	JS.class(Foo4, {
 		methods : {
-			method4 : { abstract : true }
-		}
-	})
+			method4 : { abstract : true },
+		},
+	});
 
 	JS.class(Bar, {
-		mixin : [ Foo2, Foo3],
+		mixin : [ Foo2, Foo3 ],
 
 		fields : {
-			field2 : 'overriden'
-		}
+			field2 : 'overriden',
+		},
 	});
 
 	JS.class(Bar2, {
-		inherits : Bar
+		inherits : Bar,
 	});
 
 	JS.class(Bar3,  {
 		inherits : Bar2,
-		mixin : Foo2
+		mixin    : Foo2,
 	});
 
 	it('should allow mixin of instance fields and methods', function() {
-		var bar = new Bar();
+		const bar = new Bar();
 		expect(bar.field3).to.equal(0);
 		expect(bar.method2()).to.equal('method2');
 	});
 
 	it('should not override properties already defined by the class', function() {
-		var bar = new Bar();
+		const bar = new Bar();
 		expect(bar.field2).to.equal('overriden');
 	});
 
-	it("should override properties of the class that were inherited", function() {
-		var bar = new Bar3();
+	it('should override properties of the class that were inherited', function() {
+		const bar = new Bar3();
 		expect(bar.field2).to.equal('');
 	});
 
 	it('should allow mixed-in class to inherit fields and methods of mixin-base class', function() {
-		var bar = new Bar();
+		const bar = new Bar();
 		expect(bar.field1 instanceof Date).to.equal(true);
 		expect(bar.method1()).to.equal('method1');
 	});
@@ -109,7 +115,7 @@ describe('mixin', function() {
 		expect(Bar2.hasMixin(Bar)).to.be.false;
 	});
 
-	it("should be true that the static JS.class.hasMixin method reports true for all inherited mixins", function() {
+	it('should be true that the static JS.class.hasMixin method reports true for all inherited mixins', function() {
 		expect(JS.class.hasMixin(Bar, Foo1)).to.be.true;
 		expect(JS.class.hasMixin(Bar, Foo2)).to.be.true;
 		expect(JS.class.hasMixin(Bar, Foo3)).to.be.true;
@@ -129,164 +135,182 @@ describe('mixin', function() {
 	});
 
 	it('should mixin methods to a base class, allow them to be overridden in a base class, and allow inheriting from that base class', function() {
-		var Base = JS.class('Base',  {
+		const Base = JS.class('Base',  {
 			mixin : Foo1,
 
 			methods : {
-				method1 : function() { return 'overridden-method1' }
-			}
+				method1 : function() {
+					return 'overridden-method1';
+				},
+			},
 		});
 
-		var Sub = JS.class('Sub', {
-			inherits : Base
+		const Sub = JS.class('Sub', {
+			inherits : Base,
 		});
 
-		var base = new Base();
-		var sub  = new Sub();
+		const base = new Base();
+		const sub  = new Sub();
 
 		expect(base.method1()).to.equal('overridden-method1');
-		expect(sub .method1()).to.equal('overridden-method1');
+		expect(sub.method1()).to.equal('overridden-method1');
 	});
 
 	it('should mixin methods to a base class and allow them to be overridden in a subclass', function() {
-		var Base = JS.class('Base',  {
-			mixin : Foo1
+		const Base = JS.class('Base',  {
+			mixin : Foo1,
 		});
 
-		var Sub = JS.class('Sub', {
+		const Sub = JS.class('Sub', {
 			inherits : Base,
 
 			methods : {
-				method1 : function() { return 'overridden-method1' }
-			}
+				method1 : function() {
+					return 'overridden-method1';
+				},
+			},
 		});
 
-		var base = new Base();
-		var sub  = new Sub();
+		const base = new Base();
+		const sub  = new Sub();
 
 		expect(base.method1()).to.equal('method1');
-		expect(sub .method1()).to.equal('overridden-method1');
+		expect(sub.method1()).to.equal('overridden-method1');
 	});
 
 	it('should mixin abtract methods to a base class, allow them to be implemented in a base class, and allow inheriting from that base class', function() {
-		var Base = JS.class('Base',  {
+		const Base = JS.class('Base',  {
 			mixin : Foo4,
 
 			methods : {
-				method4 : function() { return 'method4' }
-			}
+				method4 : function() {
+					return 'method4';
+				},
+			},
 		});
 
-		var Sub = JS.class('Sub', {
-			inherits : Base
+		const Sub = JS.class('Sub', {
+			inherits : Base,
 		});
 
 		expect(Base.isAbstract()).to.be.false;
-		expect(Sub .isAbstract()).to.be.false;
+		expect(Sub.isAbstract()).to.be.false;
 
-		var base = new Base();
-		var sub  = new Sub();
+		const base = new Base();
+		const sub  = new Sub();
 
 		expect(base.method4()).to.equal('method4');
-		expect(sub .method4()).to.equal('method4');
+		expect(sub.method4()).to.equal('method4');
 	});
 
 	it('should mixin abtract methods to a base class and allow them to be implemented in a sub class', function() {
-		var Base = JS.class('Base',  {
-			mixin : Foo4
+		const Base = JS.class('Base',  {
+			mixin : Foo4,
 		});
 
-		var Sub = JS.class('Sub', {
+		const Sub = JS.class('Sub', {
 			inherits : Base,
 
 			methods : {
-				method4 : function() { return 'method4' }
-			}
+				method4 : function() {
+					return 'method4';
+				},
+			},
 		});
 
 		expect(Base.isAbstract()).to.be.true;
-		expect(Sub .isAbstract()).to.be.false;
+		expect(Sub.isAbstract()).to.be.false;
 
-		var sub  = new Sub();
-		expect(sub .method4()).to.equal('method4');
+		const sub = new Sub();
+		expect(sub.method4()).to.equal('method4');
 	});
 
 	it('should support calling $super within a mixin method when mixin is applied to different classes', function() {
-		var Base1 = JS.class('Base1', {
+		const Base1 = JS.class('Base1', {
 			methods : {
-				func : function() { return 'B1' }
-			}
+				func : function() {
+					return 'B1';
+				},
+			},
 		});
-		var Base2 = JS.class('Base2', {
+		const Base2 = JS.class('Base2', {
 			methods : {
-				func : function() { return 'B2' }
-			}
+				func : function() {
+					return 'B2';
+				},
+			},
 		});
-		var Mixin = JS.class('Mixin', {
+		const Mixin = JS.class('Mixin', {
 			methods : {
-				func : function() { return this.func.super.call(this) + '+Mix' }
-			}
+				func : function() {
+					return `${this.func.super.call(this)}+Mix`;
+				},
+			},
 		});
 
-		var Impl1 = JS.class('Impl1', {
+		const Impl1 = JS.class('Impl1', {
 			inherits : Base1,
-			mixin    : Mixin
+			mixin    : Mixin,
 		});
-		var Impl2 = JS.class('Impl2', {
+		const Impl2 = JS.class('Impl2', {
 			inherits : Base2,
-			mixin    : Mixin
+			mixin    : Mixin,
 		});
 
-		var impl1 = new Impl1();
+		const impl1 = new Impl1();
 		expect(impl1.func()).to.equal('B1+Mix');
 
-		var impl2 = new Impl2();
+		const impl2 = new Impl2();
 		expect(impl2.func()).to.equal('B2+Mix');
 	});
 
 	it('should support calling $super within a mixin method when the mixin is applied to two classes in the tree', function() {
-		var Mixin = JS.class('Mixin', {
+		const Mixin = JS.class('Mixin', {
 			methods : {
-				func : function() { return this.func.super.call(this) + '+Mix' }
-			}
+				func : function() {
+					return `${this.func.super.call(this)}+Mix`;
+				},
+			},
 		});
 
-		var Base = JS.class('Base', {
+		const Base = JS.class('Base', {
 			methods : {
-				func : function() { return 'Base' }
-			}
+				func : function() {
+					return 'Base';
+				},
+			},
 		});
 
-		var Sub = JS.class('Sub', {
+		const Sub = JS.class('Sub', {
 			inherits : Base,
-			mixin    : Mixin
+			mixin    : Mixin,
 		});
-		var SubSub = JS.class('SubSub', {
+		const SubSub = JS.class('SubSub', {
 			inherits : Sub,
-			mixin    : Mixin
+			mixin    : Mixin,
 		});
 
-		var obj = new SubSub();
+		const obj = new SubSub();
 		expect(obj.func()).to.equal('Base+Mix+Mix');
 	});
 
 	// COULDDO: implement this behaviour since it's counter-intuitive that this wouldn't happen
 	// however, this might cause bugs in existing code since it would change existing behaviour
 	it.skip("should call the mixin's constructor", function() {
-		var Mixin = JS.class('Mixin', {
+		const Mixin = JS.class('Mixin', {
 			fields : {
 				f : 0,
 			},
 			constructor : function() {
 				this.f = 1;
-			}
+			},
 		});
 
-		var Foo = JS.class('Foo', {
-			mixin : Mixin
+		const Foo = JS.class('Foo', {
+			mixin : Mixin,
 		});
 
-		var foo = new Foo();
+		const foo = new Foo();
 		expect(foo.f).to.equal(1);
 	});
 });

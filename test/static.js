@@ -1,25 +1,29 @@
 'use strict';
 
-var JS     = require('../JS');
-var expect = require('chai').expect;
+const JS     = require('../JS');
+const expect = require('chai').expect;
 
 describe('static.js', function() {
 
-	var Foo = JS.class('Foo');
+	const Foo = JS.class('Foo');
 
 	JS.class(Foo, {
 		static : {
 			fields : {
 				_bar : {
-					type : String
+					type : String,
 				},
 
 				bar : {
 					init : '',
-					get : function() { return Foo._bar; },
-					set : function(value) { Foo._bar = value; },
-					initDependencies : '_bar'
-				}
+					get  : function() {
+						return Foo._bar;
+					},
+					set : function(value) {
+						Foo._bar = value;
+					},
+					initDependencies : '_bar',
+				},
 			},
 
 			methods : {
@@ -29,16 +33,16 @@ describe('static.js', function() {
 				barAsMethodGetter : {
 					get : function() {
 						return this._bar;
-					}
+					},
 				},
 				getClassNameFoo : function() {
 					return this.__className__;
-				}
-			}
-		}
+				},
+			},
+		},
 	});
 
-	var Bar = JS.class('Bar', {
+	const Bar = JS.class('Bar', {
 		inherits : Foo,
 
 		static : {
@@ -48,9 +52,9 @@ describe('static.js', function() {
 				},
 				getClassNameBar : function() {
 					return this.__className__;
-				}
-			}
-		}
+				},
+			},
+		},
 	});
 
 	it('should allow static fields, methods, and getters/setters', function() {

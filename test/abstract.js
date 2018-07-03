@@ -5,8 +5,7 @@ const expect = require('chai').expect;
 
 describe('abstract.js', function() {
 
-	const AbstractClass1 =
-	JS.class('AbstractClass1', {
+	const AbstractClass1 = JS.class('AbstractClass1', {
 		methods : {
 			method1 : {
 				abstract : true,
@@ -14,8 +13,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const AbstractClass2 =
-	JS.class('AbstractClass2', {
+	const AbstractClass2 = JS.class('AbstractClass2', {
 		inherits : AbstractClass1,
 
 		methods : {
@@ -23,17 +21,17 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const AbstractClass3 =
-	JS.class('AbstractClass3', {
+	const AbstractClass3 = JS.class('AbstractClass3', {
 		inherits : AbstractClass2,
 
 		methods : {
-			method1 : function() { return 'something'; },
+			method1 : function() {
+				return 'something';
+			},
 		},
 	});
 
-	const ConcreteClass =
-	JS.class('ConcreteClass', {
+	const ConcreteClass = JS.class('ConcreteClass', {
 		inherits : AbstractClass2,
 
 		methods : {
@@ -46,8 +44,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const AbstractClass4 =
-	JS.class('AbstractClass4', {
+	const AbstractClass4 = JS.class('AbstractClass4', {
 		inherits : ConcreteClass,
 
 		fields : {
@@ -55,8 +52,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const AbstractClass5 =
-	JS.class('AbstractClass5', {
+	const AbstractClass5 = JS.class('AbstractClass5', {
 		inherits : AbstractClass4,
 
 		fields : {
@@ -64,8 +60,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const AbstractClass6 =
-	JS.class('AbstractClass6', {
+	const AbstractClass6 = JS.class('AbstractClass6', {
 		inherits : AbstractClass5,
 
 		fields : {
@@ -73,8 +68,7 @@ describe('abstract.js', function() {
 		},
 	});
 
-	const ConcreteClass2 =
-	JS.class('ConcreteClass2', {
+	const ConcreteClass2 = JS.class('ConcreteClass2', {
 		inherits : AbstractClass5,
 
 		fields : {
@@ -101,15 +95,27 @@ describe('abstract.js', function() {
 	});
 
 	it('should not allow classes with one or more abstract methods to be instantiated', function() {
-		expect(function() { new AbstractClass1(); }).to.throw();
-		expect(function() { new AbstractClass2(); }).to.throw();
-		expect(function() { new AbstractClass3(); }).to.throw();
+		expect(function() {
+			new AbstractClass1();
+		}).to.throw();
+		expect(function() {
+			new AbstractClass2();
+		}).to.throw();
+		expect(function() {
+			new AbstractClass3();
+		}).to.throw();
 	});
 
 	it('should not allow classes with one or more abstract fields to be instantiated', function() {
-		expect(function() { new AbstractClass4(); }).to.throw();
-		expect(function() { new AbstractClass5(); }).to.throw();
-		expect(function() { new AbstractClass6(); }).to.throw();
+		expect(function() {
+			new AbstractClass4();
+		}).to.throw();
+		expect(function() {
+			new AbstractClass5();
+		}).to.throw();
+		expect(function() {
+			new AbstractClass6();
+		}).to.throw();
 	});
 
 	it('should allow the creation of new instances of derived classes that have implemented all abstract methods', function() {
@@ -125,11 +131,15 @@ describe('abstract.js', function() {
 	});
 
 	it('should report name of astract method when preventing instantiating abstract class', function() {
-		expect(function() { new AbstractClass1(); }).to.throw().and.to.have.property('message').include('method1');
+		expect(function() {
+			new AbstractClass1();
+		}).to.throw().and.to.have.property('message').include('method1');
 	});
 
 	it('should report name of astract field when preventing instantiating abstract class', function() {
-		expect(function() { new AbstractClass4(); }).to.throw().and.to.have.property('message').include('field1');
+		expect(function() {
+			new AbstractClass4();
+		}).to.throw().and.to.have.property('message').include('field1');
 	});
 });
 

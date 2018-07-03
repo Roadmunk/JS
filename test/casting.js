@@ -1,20 +1,20 @@
 'use strict';
 
-var JS     = require('../JS');
-var expect = require('chai').expect;
+const JS     = require('../JS');
+const expect = require('chai').expect;
 
 describe('casting.js', function() {
-	var constructorCalled = false;
+	let constructorCalled = false;
 
-	var Foo = JS.class('Foo', {
+	const Foo = JS.class('Foo', {
 		fields : {
 			string : {
-				type : ''
+				type : '',
 			},
 
 			reference : {
-				type : Object
-			}
+				type : Object,
+			},
 		},
 
 		constructor : function() {
@@ -23,37 +23,37 @@ describe('casting.js', function() {
 
 		methods : {
 			method1 : {
-				abstract : true
-			}
-		}
+				abstract : true,
+			},
+		},
 	});
 
-	var Bar = JS.class('Bar', {
+	const Bar = JS.class('Bar', {
 		inherits : Foo,
 
 		fields : {
 			number : {
-				type : 0
-			}
+				type : 0,
+			},
 		},
 
 		methods : {
 			method1 : function() {
 				return;
-			}
-		}
+			},
+		},
 	});
 
-	var Other = JS.class('Other', {});
+	const Other = JS.class('Other', {});
 
 	it('should allow casting of subclass instance to an instance of base class', function() {
-		var bar = new Bar();
+		const bar = new Bar();
 		bar.string = 'asdf';
 
 		expect(constructorCalled).to.be.true;
 		constructorCalled = false;
 
-		var foo = Foo(bar);
+		const foo = Foo(bar);
 
 		expect(constructorCalled).to.be.false;
 		expect(foo).not.to.be.null;
@@ -70,10 +70,10 @@ describe('casting.js', function() {
 	});
 
 	it('should creates a shallow clone if the given instance is of the same class as the casting class', function() {
-		var bar    = new Bar();
-		bar.string = "asdf";
+		const bar    = new Bar();
+		bar.string = 'asdf';
 		bar.number = 5;
-		var bar2   = Bar(bar);
+		const bar2   = Bar(bar);
 
 		expect(bar2.constructor).to.equal(bar.constructor);
 		expect(bar2).not.to.equal(bar);
@@ -83,11 +83,15 @@ describe('casting.js', function() {
 	});
 
 	it('should disallow casting to classes that are not base classes', function() {
-		var bar = new Bar();
-		expect(function() { Other(bar) }).to.throw();
+		const bar = new Bar();
+		expect(function() {
+			Other(bar);
+		}).to.throw();
 	});
 
 	it('should not allow empty arguments', function() {
-		expect(function() { Other() }).to.throw();
+		expect(function() {
+			Other();
+		}).to.throw();
 	});
 });

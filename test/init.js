@@ -1,89 +1,91 @@
 'use strict';
 
-var JS     = require('../JS');
-var expect = require('chai').expect;
+const JS     = require('../JS');
+const expect = require('chai').expect;
 
 describe('init.js', function() {
 
-	var Foo = JS.class('Foo', {
+	const Foo = JS.class('Foo', {
 		fields : {
-			e: {
+			e : {
 				type : String,
 				init : function() {
 					return this.a;
 				},
-				initDependencies : 'a'
+				initDependencies : 'a',
 			},
 			a : {
 				type : String,
-				init : 'primitive constant'
+				init : 'primitive constant',
 			},
 			b : {
 				type : String,
 				init : function() {
 					return 'init with function';
-				}
+				},
 			},
 			c : {
 				type : Object,
-				init : null
+				init : null,
 			},
 			d : {
-				type : ''
+				type : '',
 			},
 			f : {
 				type : Number,
-				init : undefined
-			}
-		}
+				init : undefined,
+			},
+		},
 	});
 
-	var Bar = JS.class('Bar', {
+	const Bar = JS.class('Bar', {
 		fields : {
 			a : {
 				type : Object,
-				init : {}
-			}
-		}
+				init : {},
+			},
+		},
 	});
 
 	it('should allow field initialization with primitive constants', function() {
-		var foo = new Foo();
+		const foo = new Foo();
 		expect(foo.a).to.equal('primitive constant');
 	});
 
 	it('should allow field initialization with a function', function() {
-		var foo = new Foo();
+		const foo = new Foo();
 		expect(foo.b).to.equal('init with function');
 	});
 
 	it('should allow field initialization with null', function() {
-		var foo = new Foo();
+		const foo = new Foo();
 		expect(foo.c).to.be.null;
 	});
 
 	it('should allow default field initialization when no init is present', function() {
-		var foo = new Foo();
-		expect(typeof foo.d).to.equal("string");
+		const foo = new Foo();
+		expect(typeof foo.d).to.equal('string');
 		expect(foo.d).to.equal('');
 	});
 
 	it('should allow field initialization with undefined when undefined is explicitly provided', function() {
-		var foo = new Foo();
+		const foo = new Foo();
 		expect(foo.f).to.be.undefined;
 	});
 
 	it('should throw an error when trying to initialize with a specific object', function() {
-		expect(function() { var a = new Bar(); return a }).to.throw();
+		expect(function() {
+			const a = new Bar(); return a;
+		}).to.throw();
 	});
 
 	it('should initialize any dependency fields first', function() {
-		var foo = new Foo();
-		expect(foo.e).to.equal("primitive constant");
+		const foo = new Foo();
+		expect(foo.e).to.equal('primitive constant');
 	});
 
 	it('should throw an error when a dependency cycle exists', function() {
-		var Cycle1 = JS.class('Cycle1', {
+		const Cycle1 = JS.class('Cycle1', {
 			fields : {
 				a : {
 					type             : String,
@@ -93,10 +95,10 @@ describe('init.js', function() {
 					type             : String,
 					initDependencies : 'a',
 				},
-			}
+			},
 		});
 
-		var Cycle2 = JS.class('Cycle2', {
+		const Cycle2 = JS.class('Cycle2', {
 			fields : {
 				a : {
 					type             : String,
@@ -109,19 +111,19 @@ describe('init.js', function() {
 				c : {
 					type             : String,
 					initDependencies : 'a',
-				}
-			}
+				},
+			},
 		});
 
-		var Cycle3 = JS.class('Cycle3', {
+		const Cycle3 = JS.class('Cycle3', {
 			inherits : Foo,
 
 			fields : {
 				a : {
-					type : String,
-					initDependencies : 'e'
-				}
-			}
+					type             : String,
+					initDependencies : 'e',
+				},
+			},
 		});
 
 		/* Make sure the error we're expecting is thrown by matching against the

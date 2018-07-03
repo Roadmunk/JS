@@ -15,91 +15,92 @@ describe('super.js', function() {
 			b : 1,
 			d : {
 				get : function() {
-					return this.a + ' BaseClass';
+					return `${this.a} BaseClass`;
 				},
 				set : function(value) {
-					this.a = value + ' BaseClass';
-				}
+					this.a = `${value} BaseClass`;
+				},
 			},
 			child : {
 				type : Subsubclass,
-				init : null
-			}
+				init : null,
+			},
 		},
 		constructor : function() {
 			this.a = 'BaseClass constructor';
 		},
 		methods : {
 			method : function(prefix) {
-				this.a = prefix + ' BaseClass';
+				this.a = `${prefix} BaseClass`;
 			},
 			method2 : function(prefix) {
-				this.a = prefix + ' BaseClass';
+				this.a = `${prefix} BaseClass`;
 			},
 			method3 : function(prefix) {
-				this.a = prefix + ' BaseClass.method3';
+				this.a = `${prefix} BaseClass.method3`;
 			},
 			method4 : {
 				get : function() {
-					return this.a + ' BaseClass';
+					return `${this.a} BaseClass`;
 				},
 				set : function(value) {
-					this.a = value + ' BaseClass';
-				}
+					this.a = `${value} BaseClass`;
+				},
 			},
 			throwMethod : function() {
 				throw new Error();
 			},
 			methodRecurse : function() {
 				let childResult = this.child ? this.child.methodRecurse() : null;
-				if (childResult)
-					childResult = ' ' + childResult;
+				if (childResult) {
+					childResult = ` ${childResult}`;
+				}
 				return childResult;
 			},
 			methodRecurse2 : function(recurseCount) {
-				const recursiveResult = recurseCount > 0 ? this.methodRecurse2(recurseCount - 1) + ' ' : '';
+				const recursiveResult = recurseCount > 0 ? `${this.methodRecurse2(recurseCount - 1)} ` : '';
 				return `Base ${recursiveResult}${this.a}`;
 			},
 
 			asyncMethod : async function(prefix) {
 				await wait(10);
-				this.a = prefix + ' BaseClass';
+				this.a = `${prefix} BaseClass`;
 			},
 
 			asyncRecurse2 : async function(recurseCount) {
 				await wait(5);
-				const recursiveResult = recurseCount > 0 ? await this.asyncRecurse2(recurseCount - 1) + ' ' : '';
+				const recursiveResult = recurseCount > 0 ? `${await this.asyncRecurse2(recurseCount - 1)} ` : '';
 				await wait(5);
 				return `Base ${recursiveResult}${this.a}`;
 			},
-		}
+		},
 	});
 
 	JS.class(Subclass, {
 		inherits : BaseClass,
-		fields : {
-			c : Object
+		fields   : {
+			c : Object,
 		},
 		methods : {
 			method : function(prefix) {
-				this.a = prefix + ' Subclass';
+				this.a = `${prefix} Subclass`;
 				this.method.super.call(this, prefix);
 			},
 			throwMethod : function() {
 				this.throwMethod.super.call(this);
 			},
 			methodRecurse : function() {
-				return 'Sub-' + this.a + (this.methodRecurse.super.call(this) || '');
+				return `Sub-${this.a}${this.methodRecurse.super.call(this) || ''}`;
 			},
 			methodRecurse2 : function(recurseCount) {	// eslint-disable-line no-unused-vars
 				const superResult = this.methodRecurse2.super.apply(this, arguments);
 				return `Sub-${superResult}`;
 			},
 			// note that method2 is deliberately ommitted
-			
+
 			asyncMethod : async function(prefix) {
 				await wait(10);
-				this.a = prefix + ' Subclass';
+				this.a = `${prefix} Subclass`;
 				await this.asyncMethod.super.call(this, prefix);
 			},
 
@@ -109,33 +110,33 @@ describe('super.js', function() {
 				await wait(5);
 				return `Sub-${superResult}`;
 			},
-		}
+		},
 	});
 
 	JS.class(Subsubclass, {
 		inherits : Subclass,
-		fields : {
+		fields   : {
 			d : {
 				get : function() {
-					return this.constructor.properties.fields.d.get.super.call(this) + ' Subsubclass';
+					return `${this.constructor.properties.fields.d.get.super.call(this)} Subsubclass`;
 				},
 				set : function(value) {
-					this.constructor.properties.fields.d.set.super.call(this, value + ' Subsubclass');
-				}
+					this.constructor.properties.fields.d.set.super.call(this, `${value} Subsubclass`);
+				},
 			},
-			e : ''
+			e : '',
 		},
 		methods : {
 			method : {
 				$super : function($super) {
 					return function(prefix) {
-						this.a = prefix + ' Subsubclass';
+						this.a = `${prefix} Subsubclass`;
 						$super.call(this, prefix);
 					};
-				}
+				},
 			},
 			method2 : function(prefix) {
-				this.a = prefix + ' Subsubclass';
+				this.a = `${prefix} Subsubclass`;
 				this.method2.super.call(this, prefix);
 			},
 			method3 : function(subsubclass, prefix) {
@@ -143,14 +144,14 @@ describe('super.js', function() {
 			},
 			method4 : {
 				get : function() {
-					return this.constructor.properties.methods.method4.get.super.call(this) + ' Subsubclass';
+					return `${this.constructor.properties.methods.method4.get.super.call(this)} Subsubclass`;
 				},
 				set : function(value) {
-					this.constructor.properties.methods.method4.set.super.call(this, value + ' Subsubclass');
-				}
+					this.constructor.properties.methods.method4.set.super.call(this, `${value} Subsubclass`);
+				},
 			},
 			methodRecurse : function() {
-				return 'Subsub-' + this.methodRecurse.super.call(this);
+				return `Subsub-${this.methodRecurse.super.call(this)}`;
 			},
 			methodRecurse2 : function(recurseCount) {	// eslint-disable-line no-unused-vars
 				const superResult = this.methodRecurse2.super.apply(this, arguments);
@@ -159,7 +160,7 @@ describe('super.js', function() {
 
 			asyncMethod : async function(prefix) {
 				await wait(10);
-				this.a = prefix + ' SubSubclass';
+				this.a = `${prefix} SubSubclass`;
 				await this.asyncMethod.super.call(this, prefix);
 			},
 
@@ -170,14 +171,14 @@ describe('super.js', function() {
 				return `Subsub-${superResult}`;
 			},
 
-		}
+		},
 	});
 
 	function wait(ms) {
 		return new Promise(resolve => {
 			setTimeout(() => resolve(), ms);
 		});
-	};
+	}
 
 	it('should allow calls to methods in ancestor classes', function() {
 		const subsubclass = new Subsubclass();
@@ -191,7 +192,7 @@ describe('super.js', function() {
 	it('should allow super calls on non-this instances', function() {
 		const s1 = new Subsubclass();
 		const s2 = new Subsubclass();
-		s1.method3(s2, "testing");
+		s1.method3(s2, 'testing');
 		expect(s1.a).to.equal('BaseClass constructor');
 		expect(s2.a).to.equal('testing BaseClass.method3');
 	});
@@ -228,7 +229,7 @@ describe('super.js', function() {
 		parent.child = child;
 
 		expect(parent.methodRecurse()).to.equal('Subsub-Sub-parent Subsub-Sub-child');
-	})
+	});
 
 	it('should support cyclical recursive super method calls', function() {
 		const s1 = new Subclass();
@@ -247,7 +248,7 @@ describe('super.js', function() {
 		expect(s2.methodRecurse2(3)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar Bar');
 	});
 
-	it('should allow asynchronous super calls', async function () {
+	it('should allow asynchronous super calls', async function() {
 		this.timeout(5000);
 
 		const subsubclass = new Subsubclass();
@@ -281,8 +282,9 @@ describe('super.js', function() {
 		const start = new Date();
 		console.profile();
 
-		for (let a = 0; a < 1000000; a++)
+		for (let a = 0; a < 1000000; a++) {
 			subsubclass.method('testing');
+		}
 
 		console.profileEnd();
 		console.log(new Date() - start);

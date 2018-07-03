@@ -1,24 +1,24 @@
 'use strict';
 
-var JS     = require('../JS');
-var expect = require('chai').expect;
+const JS     = require('../JS');
+const expect = require('chai').expect;
 
 describe('metaHooks', function() {
 
-	var Foo1 = JS.class('Foo1');
-	var Foo2 = JS.class('Foo1');
-	var Bar  = JS.class('Bar');
+	const Foo1 = JS.class('Foo1');
+	const Foo2 = JS.class('Foo1');
+	const Bar  = JS.class('Bar');
 
-	var foo1, foo2;
+	let foo1, foo2;
 
 	JS.class(Foo1, {
 		static : {
 			methods : {
 				afterCreateClass : function(subclass) {
 					foo1 = subclass;
-				}
-			}
-		}
+				},
+			},
+		},
 	});
 
 	JS.class(Foo2, {
@@ -29,9 +29,9 @@ describe('metaHooks', function() {
 				afterCreateClass : function(subclass) {
 					Foo1.afterCreateClass(subclass);
 					foo2 = subclass;
-				}
-			}
-		}
+				},
+			},
+		},
 	});
 
 	it('should call afterCreateClass on the parent of the subclass', function() {
@@ -39,13 +39,13 @@ describe('metaHooks', function() {
 
 		JS.class(Bar, {
 			inherits : Foo2,
-			static : {
+			static   : {
 				methods : {
 					afterCreateClass : function() {
-						throw "should not be called";
-					}
-				}
-			}
+						throw 'should not be called';
+					},
+				},
+			},
 		});
 
 		expect(foo1).to.equal(Bar);
