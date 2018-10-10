@@ -445,9 +445,7 @@ define(function(require, exports, module) {
 	/**
 	 * Initializes a new instance of the class or creates an instance of a baseClass (casting).
 	 * Calls constructors in parent chain and adds fields.
-	 * @param {Function} clazz - the class to create
-	 * @param {*[]}      args  - array of arguments to pass to user constructors
-	 * @param {Object} [options] @see createFunctionHelper options param
+	 * For params, @see createFunctionHelper()
 	 */
 	function createFunction(clazz, args, options) {
 		// createFunctionHelper is separate in hopes of having it optimized since a try statement tends to kill JS VM optimization
@@ -460,6 +458,13 @@ define(function(require, exports, module) {
 		}
 	}
 
+	/**
+	 * @param {Function} clazz - the class to create
+	 * @param {*[]}      args  - array of arguments to pass to user constructors
+	 * @param {Object} [options]
+	 * @param {Boolean} [options.initializeFields=true] if false, doesn't bother adding class fields
+	 * @param {Boolean} [options.recursiveCall=false] internal flag that indicates this is recursive call
+	 */
 	function createFunctionHelper(clazz, args, { initializeFields = true, recursiveCall = false } = {}) {
 		// regular instance initialization
 		if (this instanceof clazz) {
