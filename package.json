@@ -1,6 +1,6 @@
 {
   "name": "@roadmunk/jsclass",
-  "version": "1.0.11",
+  "version": "1.1.0",
   "main": "JS.js",
   "description": "OOP library for Javascript",
   "author": "Tomas Benda <tomas@roadmunk.com>",
@@ -14,13 +14,14 @@
   },
   "devDependencies": {
     "chance": "^1.0.10",
-    "mocha": "^3.5.0",
-    "chai": "^3.5.0",
+    "mocha": "^5.2.0",
+    "chai": "^4.2.0",
     "chai-datetime": "^1.5.0",
-    "@roadmunk/eslint-config-roadmunk": "^2.0.5"
+    "@roadmunk/eslint-config-roadmunk": "~3.3.0",
+    "eslint": "^4.11.0"
   },
   "engines": {
-    "node": ">=4"
+    "node": ">=8"
   },
   "bugs": {
     "url": "https://github.com/Roadmunk/JS/issues"

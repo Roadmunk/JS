@@ -1,7 +1,7 @@
 'use strict'; // $super needs to work for classes that are declared in strict mode
 
-const JS     = require('../JS');
 const expect = require('chai').expect;
+const JS     = require('../JS');
 
 describe('super.js', function() {
 
@@ -274,19 +274,5 @@ describe('super.js', function() {
 		expect(await s2.asyncRecurse2(1)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Bar Bar');
 		expect(await s2.asyncRecurse2(2)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar');
 		expect(await s2.asyncRecurse2(3)).to.equal('Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Subsub-Sub-Base Bar Bar Bar Bar');
-	});
-
-	it.skip('performance test', function() {
-		const subsubclass = new Subsubclass();
-
-		const start = new Date();
-		console.profile();
-
-		for (let a = 0; a < 1000000; a++) {
-			subsubclass.method('testing');
-		}
-
-		console.profileEnd();
-		console.log(new Date() - start);
 	});
 });

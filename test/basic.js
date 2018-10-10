@@ -1,99 +1,10 @@
 'use strict';
 
-const JS     = require('../JS');
-const expect = require('chai').expect;
+const { expect } = require('chai');
+const JS         = require('../JS');
 
 describe('basic.js', function() {
-
 	describe('a class', function() {
-
-		const ParentClass = JS.class('ParentClass', {
-			fields : {
-				constructorHistory : '',
-			},
-
-			constructor : function() {
-				this.constructorHistory += 'ParentClass;';
-			},
-		});
-
-		const SubClass = JS.class('SubClass', {
-			inherits : ParentClass,
-
-			constructor : function() {
-				this.constructorHistory += 'SubClass;';
-			},
-		});
-
-		const Bar = JS.class('Bar', {
-
-		});
-
-		const Foo = JS.class('Foo', {
-			inherits : SubClass,
-
-			fields : {
-				a : '',
-				b : 1,
-				c : {
-					init : '',
-					get  : function()      {
-						return this.a;
-					},
-					set : function(value) {
-						this.a = value;
-					},
-					initDepedencies : 'a',
-				},
-				d : {
-					type : true,
-				},
-				e : undefined,
-				f : null,
-				g : Bar,
-				h : {
-					type : Bar,
-				},
-				i : {
-					type : Bar,
-					init : null,
-				},
-				j : {
-					type : null,
-					init : function() {
-						return {};
-					},
-				},
-				k1 : {
-					type : Boolean,
-					init : true,
-				},
-				k2 : {
-					type : Boolean,
-				},
-			},
-
-			constructor : function() {
-				this.constructorHistory += 'Foo;';
-			},
-
-			methods : {
-				m1 : function() {
-					return this.b * 2;
-				},
-				p1 : {
-					get : function() {
-						return this.b;
-					},
-					set : function(value) {
-						this.b = value;
-					},
-				},
-			},
-		});
-
-		// actual specs
-
 		it('should call base constructors', function() {
 			const SubclassWithNoConstructor = JS.class('SubclassWithNoConstructor', {
 				inherits : ParentClass,
@@ -277,7 +188,7 @@ describe('basic.js', function() {
 
 			const myClass = new MyClass();
 
-			myClass.getterField = 10;
+			myClass.getterField  = 10;
 			myClass.getterMethod = 6;
 			expect(myClass.getterField).to.equal(5);
 			expect(myClass.getterMethod).to.equal(6);
@@ -311,56 +222,161 @@ describe('basic.js', function() {
 			const instance = new AfterCreateClass2();
 			expect(instance.a).to.equal(2);
 		});
+	});
 
-		describe('JS.class.isUnderConstruction()', function() {
-			const UnderConstructionTest      = JS.class('UnderConstructionTest');
-			const UnderConstructionTestChild = JS.class('UnderConstructionTestChild');
-			const UnderConstructionTest2     = JS.class('UnderConstructionTest2');
+	describe('JS.class.isUnderConstruction()', function() {
+		const UnderConstructionTest      = JS.class('UnderConstructionTest');
+		const UnderConstructionTestChild = JS.class('UnderConstructionTestChild');
+		const UnderConstructionTest2     = JS.class('UnderConstructionTest2');
 
-			JS.class(UnderConstructionTest, {
-				fields : {
-					isUnderConstruction : false,
-					child               : UnderConstructionTestChild,
-				},
-				constructor : function() {
-					this.isUnderConstruction = JS.class.isUnderConstruction(this);
-				},
-			});
+		JS.class(UnderConstructionTest, {
+			fields : {
+				isUnderConstruction : false,
+				child               : UnderConstructionTestChild,
+			},
+			constructor : function() {
+				this.isUnderConstruction = JS.class.isUnderConstruction(this);
+			},
+		});
 
-			JS.class(UnderConstructionTestChild, {
-				fields : {
-					isUnderConstruction : {
-						type : Boolean,
-						init : function() {
-							return JS.class.isUnderConstruction(this);
-						},
+		JS.class(UnderConstructionTestChild, {
+			fields : {
+				isUnderConstruction : {
+					type : Boolean,
+					init : function() {
+						return JS.class.isUnderConstruction(this);
 					},
 				},
-			});
-
-			JS.class(UnderConstructionTest2, {
-				constructor : function() {
-					throw 'asdf';
-				},
-			});
-
-			it('should return true only when the given instance is currently being constructed', function() {
-				const a = new UnderConstructionTest();
-				expect(a.isUnderConstruction).to.be.true;
-				expect(a.child.isUnderConstruction).to.be.true;
-				expect(JS.class.isUnderConstruction(a)).to.be.false;
-				expect(JS.class.isUnderConstruction(a.child)).to.be.false;
-			});
-
-			it('should recover if the instance never succeeds in construction', function() {
-				expect(JS.class.isUnderConstruction.stackSize).to.equal(0);
-				expect(function() {
-					const a = new UnderConstructionTest2();
-					a;
-				}).to.throw;
-				expect(JS.class.isUnderConstruction.stackSize).to.equal(0);
-			});
+			},
 		});
+
+		JS.class(UnderConstructionTest2, {
+			constructor : function() {
+				throw 'asdf';
+			},
+		});
+
+		it('should return true only when the given instance is currently being constructed', function() {
+			const a = new UnderConstructionTest();
+			expect(a.isUnderConstruction).to.be.true;
+			expect(a.child.isUnderConstruction).to.be.true;
+			expect(JS.class.isUnderConstruction(a)).to.be.false;
+			expect(JS.class.isUnderConstruction(a.child)).to.be.false;
+		});
+
+		it('should recover if the instance never succeeds in construction', function() {
+			expect(JS.class.isUnderConstruction.stackSize).to.equal(0);
+			expect(function() {
+				const a = new UnderConstructionTest2();
+				a;
+			}).to.throw;
+			expect(JS.class.isUnderConstruction.stackSize).to.equal(0);
+		});
+	});
+
+	describe('JS.class.new()', function() {
+		it('should create classes just like "new"', function() {
+			const foo = JS.class.new(Foo);
+			expect(foo).to.be.instanceof(Foo);
+			expect(foo.a).to.equal('');
+			expect(foo.b).to.equal(1);
+			expect(foo.c).to.equal('');
+			expect(foo.d).to.equal(true);
+		});
+
+		it('should skip field initialization if initializeFields is not true', function() {
+			const foo = JS.class.new(Foo, [], { initializeFields : false });
+			expect(foo).to.be.instanceof(Foo);
+			expect(foo.a).to.be.undefined;
+			expect(foo.b).to.be.undefined;
+			expect(foo.c).to.be.undefined;
+		});
+	});
+
+
+	const ParentClass = JS.class('ParentClass', {
+		fields : {
+			constructorHistory : '',
+		},
+
+		constructor : function() {
+			this.constructorHistory += 'ParentClass;';
+		},
+	});
+
+	const SubClass = JS.class('SubClass', {
+		inherits : ParentClass,
+
+		constructor : function() {
+			this.constructorHistory += 'SubClass;';
+		},
+	});
+
+	const Bar = JS.class('Bar', {
+
+	});
+
+	const Foo = JS.class('Foo', {
+		inherits : SubClass,
+
+		fields : {
+			a : '',
+			b : 1,
+			c : {
+				init : '',
+				get  : function()      {
+					return this.a;
+				},
+				set : function(value) {
+					this.a = value;
+				},
+				initDepedencies : 'a',
+			},
+			d : {
+				type : true,
+			},
+			e : undefined,
+			f : null,
+			g : Bar,
+			h : {
+				type : Bar,
+			},
+			i : {
+				type : Bar,
+				init : null,
+			},
+			j : {
+				type : null,
+				init : function() {
+					return {};
+				},
+			},
+			k1 : {
+				type : Boolean,
+				init : true,
+			},
+			k2 : {
+				type : Boolean,
+			},
+		},
+
+		constructor : function() {
+			this.constructorHistory += 'Foo;';
+		},
+
+		methods : {
+			m1 : function() {
+				return this.b * 2;
+			},
+			p1 : {
+				get : function() {
+					return this.b;
+				},
+				set : function(value) {
+					this.b = value;
+				},
+			},
+		},
 	});
 
 }); // end basic.js
