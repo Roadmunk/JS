@@ -1,7 +1,7 @@
 'use strict';
 
-const JS     = require('../JS');
-const expect = require('chai').expect;
+const { expect } = require('chai');
+const JS         = require('../JS');
 
 describe('casting.js', function() {
 	let constructorCalled = false;
@@ -47,7 +47,7 @@ describe('casting.js', function() {
 	const Other = JS.class('Other', {});
 
 	it('should allow casting of subclass instance to an instance of base class', function() {
-		const bar = new Bar();
+		const bar  = new Bar();
 		bar.string = 'asdf';
 
 		expect(constructorCalled).to.be.true;
@@ -70,10 +70,10 @@ describe('casting.js', function() {
 	});
 
 	it('should creates a shallow clone if the given instance is of the same class as the casting class', function() {
-		const bar    = new Bar();
+		const bar  = new Bar();
 		bar.string = 'asdf';
 		bar.number = 5;
-		const bar2   = Bar(bar);
+		const bar2 = Bar(bar);
 
 		expect(bar2.constructor).to.equal(bar.constructor);
 		expect(bar2).not.to.equal(bar);

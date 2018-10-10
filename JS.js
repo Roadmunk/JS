@@ -3,18 +3,10 @@ if (typeof define !== 'function')  {
 }
 
 define(function(require, exports, module) {
-
 	const JS = module.exports;
 
 	const constructionStack     = [];	// the list of objects currently being constructed
 	const originalPropertiesMap = new WeakMap();	// keeps track of the original properties for classes as defined (before they are modified)
-
-	// Polyfill
-	// SHOULDDO: get rid of this once .setPrototypeOf is widely supported
-	Object.setPrototypeOf = Object.setPrototypeOf || function(obj, proto) {
-		obj.__proto__ = proto;
-		return obj;
-	};
 
 	/**
 	 * Creates a javascript class.
@@ -54,14 +46,14 @@ define(function(require, exports, module) {
 		// full definition form with className inherited from parent class
 		if (typeof className === 'object' && originalProperties === undefined && className.inherits) {
 			originalProperties = className;
-			className = originalProperties.inherits.__className__;
+			className          = originalProperties.inherits.__className__;
 		}
 
 		if (typeof className === 'string') {
 			const shortClassName = className.match(/[a-zA-Z0-9_]*$/)[0];	// take the last alphanum word since it must be a Javascript name
 
 			// using eval here so that the className will be used in the function definition (shows in debuggers and such which makes debugging easier)
-			eval(`clazz = function ${shortClassName}() { return createFunction.call(this, arguments); };`);	// eslint-disable-line no-eval
+			eval(`clazz = function ${shortClassName}() { return createFunction.call(this, ${shortClassName}, arguments); };`);	// eslint-disable-line no-eval
 
 			clazz.__className__ = className;
 
@@ -94,8 +86,8 @@ define(function(require, exports, module) {
 		// define user constructor
 		const constructor = getConstructor(properties, className);
 		if (constructor) {
-			constructor.methodName = 'userConstructor';
-			constructor.__class__  = clazz;
+			constructor.methodName           = 'userConstructor';
+			constructor.__class__            = clazz;
 			clazz.properties.userConstructor = constructor;
 		}
 
@@ -236,7 +228,7 @@ define(function(require, exports, module) {
 					}
 				}
 				else if (typeof field.type !== 'function') {
-					const a = normalizeField(field.type);
+					const a    = normalizeField(field.type);
 					field.type = a.type;
 					field.init = field.init === undefined ? a.init : field.init;
 				}
@@ -440,29 +432,41 @@ define(function(require, exports, module) {
 	}
 
 	/**
+	 * Factory method for creating instances of classes.  Like "new" but takes options to affect the construction process.
+	 * @param {Function} clazz - the clazz for which to instantiate the new object
+	 * @param {*[]} [constructorArgs=[]] any arguments to pass to the constructor of clazz
+	 * @param {Object[]} [options]
+	 * @param {Boolean} [options.initializeFields=true]
+	 */
+	JS.class.new = function(clazz, constructorArgs = [], { initializeFields = true } = {}) {
+		return createFunction.call(Object.create(clazz.prototype), clazz, constructorArgs, { initializeFields });
+	};
+
+	/**
 	 * Initializes a new instance of the class or creates an instance of a baseClass (casting).
 	 * Calls constructors in parent chain and adds fields.
-	 * @param {Mixed[]} args array of arguments to pass to user constructors
+	 * @param {Function} clazz - the class to create
+	 * @param {*[]}      args  - array of arguments to pass to user constructors
+	 * @param {Object} [options] @see createFunctionHelper options param
 	 */
-	function createFunction(args) {
+	function createFunction(clazz, args, options) {
 		// createFunctionHelper is separate in hopes of having it optimized since a try statement tends to kill JS VM optimization
 		try {
 			constructionStack.push(this);
-			return createFunctionHelper.call(this, createFunction.caller, args);
+			return createFunctionHelper.call(this, clazz, args, options);
 		}
 		finally {
 			constructionStack.pop();
 		}
 	}
 
-	function createFunctionHelper(clazz, args) {
+	function createFunctionHelper(clazz, args, { initializeFields = true, recursiveCall = false } = {}) {
 		// regular instance initialization
 		if (this instanceof clazz) {
 			if (clazz.properties === undefined) {
 				throw new Error(`cannot instantiate stub class: ${this.constructor.__className__}`);
 			}
 
-			const recursiveCall    = clazz.caller === createFunctionHelper;
 			const constructingThis = this.constructor === clazz;
 
 			// if called recursively, then it's a casting instance creation (don't call constructors)
@@ -475,36 +479,40 @@ define(function(require, exports, module) {
 				}
 
 				// add instance fields
-				createFields.call(this, clazz.properties.fields);
+				if (initializeFields) {
+					createFields.call(this, clazz.properties.fields);
+				}
 				callUserConstructors.apply(this, args);
 
 				if (typeof this.afterCreateInstance == 'function') {
 					this.afterCreateInstance();
 				}
 			}
+
+			return this;
 		}
 		// casting to base class
-		else {
-			const source = args[0];
 
-			if (source === undefined) {
-				throw new Error('required parameter missing; must supply a reference to subclass instance');
-			}
+		const source = args[0];
 
-			if (!source.constructor || !source.constructor.isSubclass) {
-				throw new Error('parameter must be an instance of a class');
-			}
-
-			// check to make sure that the requested class is a base class of this one
-			if (!source.constructor.isSubclass(clazz)) {
-				throw new Error('can only cast to a base class');
-			}
-
-			const result = new clazz();
-			createFields.call(result, clazz.properties.fields, source);
-
-			return result;
+		if (source === undefined) {
+			throw new Error('required parameter missing; must supply a reference to subclass instance');
 		}
+
+		if (!source.constructor || !source.constructor.isSubclass) {
+			throw new Error('parameter must be an instance of a class');
+		}
+
+		// check to make sure that the requested class is a base class of this one
+		if (!source.constructor.isSubclass(clazz)) {
+			throw new Error('can only cast to a base class');
+		}
+
+		const result = createFunction.call(Object.create(clazz.prototype), clazz, undefined, { initializeFields, recursiveCall : true });
+		createFields.call(result, clazz.properties.fields, source);
+
+		return result;
+
 	}
 
 	/**
@@ -545,7 +553,7 @@ define(function(require, exports, module) {
 						configurable : false,
 					};
 					if (typeof method.get === 'function') {
-						method.get = makeSuperStackUpdaterProxy(method.get);
+						method.get            = makeSuperStackUpdaterProxy(method.get);
 						method.get.methodType = 'get';
 						method.get.methodName = name;
 						method.get.__class__  = this;
@@ -554,7 +562,7 @@ define(function(require, exports, module) {
 						descriptor.set        = function() {};	// add silent setter in case there's only a getter (will be overwritten by setter if there is one)
 					}
 					if (typeof method.set === 'function') {
-						method.set = makeSuperStackUpdaterProxy(method.set);
+						method.set            = makeSuperStackUpdaterProxy(method.set);
 						method.set.methodType = 'set';
 						method.set.methodName = name;
 						method.set.__class__  = this;
@@ -581,7 +589,7 @@ define(function(require, exports, module) {
 			}
 
 			if (typeof method === 'function') {
-				method = makeSuperStackUpdaterProxy(method);
+				method            = makeSuperStackUpdaterProxy(method);
 				method.methodType = 'method';
 				method.methodName = name;
 				method.__class__  = this;	// link each method to the class for which it is a method
@@ -605,14 +613,14 @@ define(function(require, exports, module) {
 			// define non-value fields (ie. getters/setters)
 			if (typeof field.get === 'function' || typeof field.set === 'function') {
 				if (field.get) {
-					field.get = makeSuperStackUpdaterProxy(field.get);
+					field.get            = makeSuperStackUpdaterProxy(field.get);
 					field.get.methodType = 'get';
 					field.get.methodName = name;
 					field.get.__class__  = this;
 					field.get.super      = makeSuperMethodProxy(field.get);
 				}
 				if (field.set) {
-					field.set = makeSuperStackUpdaterProxy(field.set);
+					field.set            = makeSuperStackUpdaterProxy(field.set);
 					field.set.methodType = 'set';
 					field.set.methodName = name;
 					field.set.__class__  = this;
@@ -640,9 +648,18 @@ define(function(require, exports, module) {
 		const sortedFieldNames = getSortedFieldNames(fields);
 		const len              = sortedFieldNames.length;
 
-		for (let a = 0; a < len; a++) {
-			const fieldName = sortedFieldNames[a];
-			this[fieldName] = initialValues ? initialValues[fieldName] : JS.class.initialFieldValue(this, fields[fieldName]);
+		// separate for-loops for speed
+		if (initialValues) {
+			for (let a = 0; a < len; a++) {
+				const fieldName = sortedFieldNames[a];
+				this[fieldName] = initialValues[fieldName];
+			}
+		}
+		else {
+			for (let a = 0; a < len; a++) {
+				const fieldName = sortedFieldNames[a];
+				this[fieldName] = JS.class.initialFieldValue(this, fields[fieldName]);
+			}
 		}
 	}
 

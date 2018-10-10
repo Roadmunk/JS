@@ -1,7 +1,7 @@
 'use strict';
 
-const JS     = require('../JS');
 const expect = require('chai').expect;
+const JS     = require('../JS');
 
 describe('util.js', function() {
 
@@ -80,7 +80,7 @@ describe('util.js', function() {
 
 		it('should not override values when provided', function() {
 			let result = { a : 6 };
-			result = JS.util.defaults(result, { a : 5, b : 'asdf' });
+			result     = JS.util.defaults(result, { a : 5, b : 'asdf' });
 			expect(result.a).to.equal(6);
 			expect(result.b).to.equal('asdf');
 		});
@@ -121,7 +121,7 @@ describe('util.js', function() {
 
 	describe('proxy', function() {
 		it('should override given method and pass in the old method into the overriding function', function() {
-			let foo = '';
+			let foo          = '';
 			const testObject = {
 				func1 : function(param1) {
 					foo += `,${param1}`;
