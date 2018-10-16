@@ -4,8 +4,9 @@ if (typeof define !== 'function')  {
 
 define(function(require, exports, module) {
 	const JS = module.exports;
+	JS.util  = require('./JS.util.js');
 
-	const constructionStack     = [];	// the list of objects currently being constructed
+	const constructionSet       = new Set();		// the list of objects currently being constructed
 	const originalPropertiesMap = new WeakMap();	// keeps track of the original properties for classes as defined (before they are modified)
 
 	/**
@@ -76,7 +77,7 @@ define(function(require, exports, module) {
 		setupSuperClass(clazz, originalProperties);
 
 		// compose final class properties from all original sources
-		const properties   = clazz.properties = clone(originalProperties);
+		const properties   = clazz.properties = JS.util.clone(originalProperties);
 		properties.fields  = {};
 		properties.methods = {};
 		extendPropertiesWithClass(properties, clazz);
@@ -136,12 +137,12 @@ define(function(require, exports, module) {
 	}
 
 	function normalizeProperties(properties) {
-		properties = defaults(properties, {
+		properties = JS.util.defaults(properties, {
 			methods : {}, fields  : {}, static  : {}, mixin   : [],
 		});
-		properties.mixin = ensureArray(properties.mixin);
+		properties.mixin = JS.util.ensureArray(properties.mixin);
 
-		properties.static = defaults(properties.static, {
+		properties.static = JS.util.defaults(properties.static, {
 			methods : {}, fields  : {},
 		});
 
@@ -253,17 +254,16 @@ define(function(require, exports, module) {
 
 	/**
 	 * Extends the given properties object with the properties of another class.
-	 * @param  {Object} properties
-	 * @param  {BaseClass} clazz - another class from which to copy properties
-	 * @param  {Object} [options]
-	 *            {Boolean} [isMixin=false]    if true, clazz is a mixin and properties must be copied
-	 *            {Boolean} [copyMethods=true] if false, does not copy the .methods key over
+	 * @param {Object} properties
+	 * @param {BaseClass} clazz - another class from which to copy properties
+	 * @param {Object}  [options]
+	 * @param {Boolean} [options.isMixin=false] if true, clazz is a mixin and properties must be copied
+	 * @param {Boolean} [options.copyMethods=true] if false, does not copy the .methods key over
 	 */
-	function extendPropertiesWithClass(properties, clazz, options) {
+	function extendPropertiesWithClass(properties, clazz, { isMixin = false, copyMethods = true } = {}) {
 		if (!clazz) {
 			return;
 		}
-		options = defaults(options, { isMixin : false, copyMethods : true });
 
 		const classProperties = originalPropertiesMap.get(clazz);
 		if (!classProperties) {
@@ -276,33 +276,30 @@ define(function(require, exports, module) {
 		}
 
 		// check if mixin has a constructor which currently won't get run (atleast log a warning)
-		if (options.isMixin && getConstructor(clazz.properties, clazz.__className__)) {
+		if (isMixin && getConstructor(clazz.properties, clazz.__className__)) {
 			console.warn(`mixin class has a constructor but it won't get run: ${clazz.__className__}`);
 		}
 
 		// 1. add from any base classes
-		extendPropertiesWithClass(properties, classProperties.inherits, {
-			isMixin     : options.isMixin,
-			copyMethods : options.isMixin && options.copyMethods,
-		});
+		extendPropertiesWithClass(properties, classProperties.inherits, { isMixin, copyMethods : isMixin && copyMethods });
 
 		// 2. copy any properties from mixin classes
 		classProperties.mixin.forEach(function(mixinClass) {
-			extendPropertiesWithClass(properties, mixinClass, { isMixin : true, copyMethods : options.copyMethods });
+			extendPropertiesWithClass(properties, mixinClass, { isMixin : true, copyMethods });
 		});
 
 		// 3. copy fields and optionally methods from clazz
 		extendWithObject(properties.fields, classProperties.fields);
 
-		if (options.isMixin || options.copyMethods) {
+		if (isMixin || copyMethods) {
 			extendWithObject(properties.static.fields,  classProperties.static.fields);
 
 			// if this is a mixin, then don't copy methods -- instead create a wrapper around the mixin method
-			if (options.isMixin && options.copyMethods) {
+			if (isMixin && copyMethods) {
 				extendWithMethodWrappers(properties.methods,        classProperties.methods);
 				extendWithMethodWrappers(properties.static.methods, classProperties.static.methods);
 			}
-			else if (options.copyMethods) {
+			else if (copyMethods) {
 				extendWithObject(properties.methods,        classProperties.methods);
 				extendWithObject(properties.static.methods, classProperties.static.methods);
 			}
@@ -325,7 +322,7 @@ define(function(require, exports, module) {
 					extendWithMethodWrappers(dest, sourceValue);
 				}
 				else {
-					dest[name] = clone(sourceValue);
+					dest[name] = JS.util.clone(sourceValue);
 				}
 			}
 		}
@@ -346,7 +343,7 @@ define(function(require, exports, module) {
 				}
 
 				else if (!sourceMethod || sourceMethod.abstract || typeof sourceMethod !== 'function') {
-					dest[methodName] = clone(sourceMethod);
+					dest[methodName] = JS.util.clone(sourceMethod);
 				}
 
 				else {
@@ -369,13 +366,11 @@ define(function(require, exports, module) {
 	/**
 	 * Provides a standard getter function that returns the value of the given property of this object.
 	 * @param {string} property is the name of another property of the class whose value to retrieve
-	 * @param {object} options is an optional list of additional parameters:
-	 *                 {boolean} asFunction, invokes the specified property as a function
+	 * @param {object} [options]
+	 * @param {Boolean} [options.asFunction] invokes the specified property as a function
 	 */
-	JS.getter = function(property, options) {
-		options = options || {};
-
-		if (options.asFunction) {
+	JS.getter = function(property, { asFunction } = {}) {
+		if (asFunction) {
 			return function() {
 				const prop = this[property];
 				return typeof prop == 'function' ? prop() : undefined;
@@ -389,14 +384,12 @@ define(function(require, exports, module) {
 
 	/**
 	 * Provides a standard setter function that sets the value of the given property of this object.
-	 * @param {string} property is the name of another property of the class whose value to set
-	 * @param {object} options is an optional list of additional parameters:
-	 *                 {boolean} asFunction, invokes the specified property as a function with the value as the only parameter
+	 * @param {string}  property is the name of another property of the class whose value to set
+	 * @param {object}  [options]
+	 * @param {Boolean} [options.asFunction] invokes the specified property as a function with the value as the only parameter
 	 */
-	JS.setter = function(property, options) {
-		options = options || {};
-
-		if (options.asFunction) {
+	JS.setter = function(property, { asFunction } = {}) {
+		if (asFunction) {
 			return function(value) {
 				const prop = this[property];
 				if (typeof prop === 'function') {
@@ -436,7 +429,7 @@ define(function(require, exports, module) {
 	 * @param {Function} clazz - the clazz for which to instantiate the new object
 	 * @param {*[]} [constructorArgs=[]] any arguments to pass to the constructor of clazz
 	 * @param {Object[]} [options]
-	 * @param {Boolean} [options.initializeFields=true]
+	 * @param {Boolean}  [options.initializeFields=true]
 	 */
 	JS.class.new = function(clazz, constructorArgs = [], { initializeFields = true } = {}) {
 		return createFunction.call(Object.create(clazz.prototype), clazz, constructorArgs, { initializeFields });
@@ -450,11 +443,11 @@ define(function(require, exports, module) {
 	function createFunction(clazz, args, options) {
 		// createFunctionHelper is separate in hopes of having it optimized since a try statement tends to kill JS VM optimization
 		try {
-			constructionStack.push(this);
+			constructionSet.add(this);
 			return createFunctionHelper.call(this, clazz, args, options);
 		}
 		finally {
-			constructionStack.pop();
+			constructionSet.delete(this);
 		}
 	}
 
@@ -489,7 +482,7 @@ define(function(require, exports, module) {
 				}
 				callUserConstructors.apply(this, args);
 
-				if (typeof this.afterCreateInstance == 'function') {
+				if (typeof this.afterCreateInstance === 'function') {
 					this.afterCreateInstance();
 				}
 			}
@@ -544,8 +537,8 @@ define(function(require, exports, module) {
 	/**
 	 * Helper function that creates methods on the class.
 	 * Expects to be called in the context of the class object.
-	 * @param  {Object} definitions the class property definitions object
-	 * @param  {Object} destination where to add the new method
+	 * @param {Object} definitions the class property definitions object
+	 * @param {Object} destination where to add the new method
 	 */
 	function createMethods(definitions, destination) {
 		for (const name in definitions) {
@@ -714,7 +707,7 @@ define(function(require, exports, module) {
 		// check for initialization dependencies (when field init needs to have other fields initialized first)
 		const field = fields[fieldName];
 		if (field.initDependencies) {
-			ensureArray(fields[fieldName].initDependencies).forEach(fieldName => processField(fields, fieldName, sortedFields, visitedFields));
+			JS.util.ensureArray(fields[fieldName].initDependencies).forEach(fieldName => processField(fields, fieldName, sortedFields, visitedFields));
 		}
 
 		sortedFields.push(fieldName);
@@ -926,12 +919,12 @@ define(function(require, exports, module) {
 	 * @param {Object} instance
 	 */
 	JS.class.isUnderConstruction = function(instance) {
-		return constructionStack.indexOf(instance) >= 0;
+		return constructionSet.has(instance);
 	};
 
 	Object.defineProperty(JS.class.isUnderConstruction, 'stackSize', {
 		get : function() {
-			return constructionStack.length;
+			return constructionSet.size;
 		},
 	});
 
@@ -1102,150 +1095,6 @@ define(function(require, exports, module) {
 			},
 		},
 	});
-
-	// Other utility functions
-	JS.util = {};
-
-	/**
-	 * Does a call to the given function (it provided) and trapping any exceptions.
-	 * Useful when dealing with callback functions.
-	 * @param  {Function}   func
-	 * @param  {Array()}    args
-	 * @param  {Object}     context is an optional calling context so that inside func, this === context
-	 */
-	JS.util.callback = function callback(func, args, context) {
-		if (context === undefined) {
-			context = null;
-		}
-
-		try {
-			if (typeof func === 'function') {
-				func.apply(context, args);
-			}
-		}
-		catch (e) {
-			(console.error || console.log)(e.stack || e.message || e);
-		}
-
-		if (func && typeof func !== 'function') {
-			throw new Error(`callback is not a function: ${func}`);
-		}
-	};
-
-	/**
-	 * Creates/ammends the given object with the given set of default properties.
-	 * @param  {Object|undefined} object   the object whose properties to ammend
-	 * @param  {Object}           defaults the map of keys/values to ensure exist in the result object
-	 * @return {Object}
-	 */
-	function defaults(object, defaultValues) {
-		if (!object) {
-			return defaultValues;
-		}
-
-		const keys = Object.keys(object);
-		let index  = keys.length;
-		while (index--) {
-			const key = keys[index];
-			if (object.hasOwnProperty(key)) {
-				defaultValues[key] = object[key];
-			}
-		}
-
-		return defaultValues;
-	}
-	JS.util.defaults = defaults;	// done this way so the function can be used in JS.class before this is defined
-
-	/**
-	 * Returns a function that returns a new instance of the given constructor passing along
-	 * any parameters.  Useful for factory methods.
-	 * @param  {Function} constructor the constructor function for resultant instances
-	 * @return {Function}
- 	*/
-	JS.util.createFactory = function(constructor) {
-		return function() {
-			return new (constructor.bind(...[ null ].concat(Array.prototype.slice.call(arguments))))();
-		};
-	};
-
-	/**
-	 * Ensures that the given value is either an array or turned into an array.
-	 * Null and undefined are treated as empty arrays.
-	 * @param  {*} value
-	 * @return {Array} if value is already an Array, value; otherwise a new Array containing value as it's only element
-	 */
-	function ensureArray(value) {
-		if (value === undefined || value === null) {
-			return [];
-		}
-		if (Array.isArray(value)) {
-			return value;
-		}
-		return [ value ];
-	}
-	JS.util.ensureArray = ensureArray;	// done this way so the function can be used in JS.class before this is defined
-
-	/**
-	 * Replaces an object's property that is a function with another but gives the new
-	 * function access to the old replaced function during calling.
-	 * @param  {Object}   object      object whose property to replace
-	 * @param  {String}   property    the name of the property to replace (value must be a function)
-	 * @param  {Function} newFunction the replacement function
-	 *                                it's called with the same parameters as the original but with an extra
-	 *                                first paramter that is a reference to the original function
-	 * @returns {Function} the original function that is being proxied
-	 */
-	JS.util.proxy = function(object, property, newFunction) {
-		const oldFunc = object[property];
-
-		if (typeof oldFunc !== 'function') {
-			throw new Error(`property value must be a function: ${property}`);
-		}
-
-		if (typeof newFunction !== 'function') {
-			throw new Error(`newFunction must be a function: ${newFunction}`);
-		}
-
-		object[property] = function() {
-			const len  = arguments.length;
-			const args = new Array(len + 1);
-			args[0]    = oldFunc;
-
-			for (let a = 0; a < len; a++) {
-				args[a + 1] = arguments[a];
-			}
-
-			return newFunction.apply(this, args);
-		};
-
-		return oldFunc;
-	};
-
-	/**
-	 * Returns a deep copy of the given object.
-	 * @param  {Object} obj
-	 * @return {Object}
-	 */
-	function clone(obj) {
-		if (!obj || typeof obj !== 'object') {
-			return obj;
-		}
-
-		const result = obj instanceof Array ? [] : {};
-		for (const key in obj) {
-			if (!obj.hasOwnProperty(key)) {
-				continue;
-			}
-			let val = obj[key];
-			if (val && typeof val === 'object') {
-				val = clone(val);
-			}
-			result[key] = val;
-		}
-
-		return result;
-	}
-	JS.util.clone = clone;
 
 	/**
 	 * Helper function that runs two functions in a try-finally block, but will only run the `finallyBlock`
