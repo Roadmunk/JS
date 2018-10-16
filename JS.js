@@ -186,7 +186,7 @@ define(function(require, exports, module) {
 
 	/**
 	 * Redefines the field definition if short-hand notations are used.
-	 * @param {any} field definition
+	 * @param  {Object} field definition
 	 * @return {Object} field object definition (at least contains a type property)
 	 */
 	function normalizeField(field) {
@@ -365,8 +365,8 @@ define(function(require, exports, module) {
 
 	/**
 	 * Provides a standard getter function that returns the value of the given property of this object.
-	 * @param {string} property is the name of another property of the class whose value to retrieve
-	 * @param {object} [options]
+	 * @param {String} property is the name of another property of the class whose value to retrieve
+	 * @param {Object} [options]
 	 * @param {Boolean} [options.asFunction] invokes the specified property as a function
 	 */
 	JS.getter = function(property, { asFunction } = {}) {
@@ -384,8 +384,8 @@ define(function(require, exports, module) {
 
 	/**
 	 * Provides a standard setter function that sets the value of the given property of this object.
-	 * @param {string}  property is the name of another property of the class whose value to set
-	 * @param {object}  [options]
+	 * @param {String}  property is the name of another property of the class whose value to set
+	 * @param {Object}  [options]
 	 * @param {Boolean} [options.asFunction] invokes the specified property as a function with the value as the only parameter
 	 */
 	JS.setter = function(property, { asFunction } = {}) {
@@ -781,8 +781,8 @@ define(function(require, exports, module) {
 	 *
 	 * NOTE: a method must be proxied using this function *before* any properties are assigned to it.
 	 *
-	 * @param  {function} method
-	 * @return {function}
+	 * @param  {Function} method
+	 * @return {Function}
 	 */
 	function makeSuperStackUpdaterProxy(method) {
 		// check if the method doesn't even contain a call to it's super method
@@ -885,9 +885,9 @@ define(function(require, exports, module) {
 
 	/**
 	 * Returns whether the given class is or is a subclass of the given class.
-	 * @param {Function} possibleSubclass
-	 * @param {Function | String | Object} ancestorClass or className or object instance of the ancestor class
-	 * @param {Boolean} [properSubclass=false] if true, possibleClass must be a proper subclass of ancestorClass (cannot be the same class)
+	 * @param  {Function} possibleSubclass
+	 * @param  {Function | String | Object} ancestorClass or className or object instance of the ancestor class
+	 * @param  {Boolean} [properSubclass=false] if true, possibleClass must be a proper subclass of ancestorClass (cannot be the same class)
 	 * @return {Boolean}
 	 */
 	JS.class.isSubclass = function(possibleSubclass, ancestorClass, properSubclass) {
@@ -979,7 +979,7 @@ define(function(require, exports, module) {
 			methods : {
 				/**
 				 * Returns whether this class is or is a subclass of the given class.
-				 * @param {Function | String | Object} ancestorClass or className or object instance of the ancestor class
+				 * @param  {Function | String | Object} ancestorClass or className or object instance of the ancestor class
 				 * @return {Boolean}
 				 */
 				isSubclass : function(ancestorClass) {
