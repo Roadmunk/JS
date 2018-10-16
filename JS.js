@@ -54,7 +54,7 @@ define(function(require, exports, module) {
 			const shortClassName = className.match(/[a-zA-Z0-9_]*$/)[0];	// take the last alphanum word since it must be a Javascript name
 
 			// using eval here so that the className will be used in the function definition (shows in debuggers and such which makes debugging easier)
-			eval(`clazz = function ${shortClassName}() { return createFunction.call(this, ${shortClassName}, arguments); };`);	// eslint-disable-line no-eval
+			eval(`clazz = function ${shortClassName}() { return JS.class.new.call(this, ${shortClassName}, arguments); };`);	// eslint-disable-line no-eval
 
 			clazz.__className__ = className;
 
@@ -186,7 +186,7 @@ define(function(require, exports, module) {
 
 	/**
 	 * Redefines the field definition if short-hand notations are used.
-	 * @param {any} field definition
+	 * @param  {Object} field definition
 	 * @return {Object} field object definition (at least contains a type property)
 	 */
 	function normalizeField(field) {
@@ -365,8 +365,8 @@ define(function(require, exports, module) {
 
 	/**
 	 * Provides a standard getter function that returns the value of the given property of this object.
-	 * @param {string} property is the name of another property of the class whose value to retrieve
-	 * @param {object} [options]
+	 * @param {String} property is the name of another property of the class whose value to retrieve
+	 * @param {Object} [options]
 	 * @param {Boolean} [options.asFunction] invokes the specified property as a function
 	 */
 	JS.getter = function(property, { asFunction } = {}) {
@@ -384,8 +384,8 @@ define(function(require, exports, module) {
 
 	/**
 	 * Provides a standard setter function that sets the value of the given property of this object.
-	 * @param {string}  property is the name of another property of the class whose value to set
-	 * @param {object}  [options]
+	 * @param {String}  property is the name of another property of the class whose value to set
+	 * @param {Object}  [options]
 	 * @param {Boolean} [options.asFunction] invokes the specified property as a function with the value as the only parameter
 	 */
 	JS.setter = function(property, { asFunction } = {}) {
@@ -428,71 +428,88 @@ define(function(require, exports, module) {
 	 * Factory method for creating instances of classes.  Like "new" but takes options to affect the construction process.
 	 * @param {Function} clazz - the clazz for which to instantiate the new object
 	 * @param {*[]} [constructorArgs=[]] any arguments to pass to the constructor of clazz
-	 * @param {Object[]} [options]
-	 * @param {Boolean}  [options.initializeFields=true]
+	 * @param {Object} [options]
+	 * @param {Boolean} [options.allowAbstractClasses=false] if true, allows creation of an abstract class (used internally)
+	 * @param {Boolean} [options.callConstructors=true] if false, does not call user constructors
+	 * @param {Boolean} [options.callAfterCreateInstance=true] if false, does not call afterCreateInstance method
+	 * @param {Boolean} [options.initAllFields=true] if false, only initializes fields mentioned in initFieldsWithValue and initFieldsWithInitArgs
+	 * @param {Object}  [options.initFieldsWithValue]
+	 *           if provided, initialize these fields
+	 *           keys are field names of fields to initialize
+	 *           values are the value to directly set for the field
+	 * @param {Object}  [options.initFieldsWithInitArgs]
+	 *           if provided, initialize these fields
+	 *           keys are field names of fields to initialize
+	 *           values are the array of arguments to pass to the field's init function (if it has one) otherwise the value is irrelevant
 	 */
-	JS.class.new = function(clazz, constructorArgs = [], { initializeFields = true } = {}) {
-		return createFunction.call(Object.create(clazz.prototype), clazz, constructorArgs, { initializeFields });
+	JS.class.new = function(clazz, constructorArgs = [], options) {
+		// check if function called directly
+		const instance = this === JS.class ? Object.create(clazz.prototype) : this;
+
+		// calling separate functions in hopes of having it optimized since a try statement tends to kill JS VM optimization
+		try {
+			if (instance instanceof clazz) {
+				constructionSet.add(instance);
+				return createInstance.call(instance, clazz, constructorArgs, options);
+			}
+		}
+		finally {
+			constructionSet.delete(instance);
+		}
+
+		return castToBaseClass(clazz, constructorArgs[0]);
 	};
 
 	/**
-	 * Initializes a new instance of the class or creates an instance of a baseClass (casting).
-	 * Calls constructors in parent chain and adds fields.
-	 * For params, @see createFunctionHelper()
+	 * Regular instance initialization
+	 * @param {Function} clazz - the class to create
+	 * @param {*[]}      args  - array of arguments to pass to user constructors
+	 * @param {Object}   [options] @see JS.class.new options
 	 */
-	function createFunction(clazz, args, options) {
-		// createFunctionHelper is separate in hopes of having it optimized since a try statement tends to kill JS VM optimization
-		try {
-			constructionSet.add(this);
-			return createFunctionHelper.call(this, clazz, args, options);
+	function createInstance(clazz, args, {
+		initAllFields           = true,
+		callConstructors        = true,
+		callAfterCreateInstance = true,
+		allowAbstractClasses    = false,
+		initFieldsWithValue,
+		initFieldsWithInitArgs,
+	} = {}) {
+		if (clazz.properties === undefined) {
+			throw new Error(`cannot instantiate stub class: ${this.constructor.__className__}`);
 		}
-		finally {
-			constructionSet.delete(this);
+
+		// check for abstract class only if this is the top-level call (ie. not a base-class constructor call)
+		if (!allowAbstractClasses && this.constructor === clazz && BaseClass.isAbstract.call(clazz)) {
+			const methodName = BaseClass.abstractMethodName.call(clazz);
+			const fieldName  = BaseClass.abstractFieldName.call(clazz);
+			throw new Error(`cannot instantiate abstract class: ${this.constructor.__className__} (${methodName ? `method : ${methodName}` : `field: ${fieldName}`})`);
 		}
+
+		// add instance fields
+		createFields.call(this, clazz.properties.fields, {
+			initAllFields,
+			initialValues   : initFieldsWithValue,
+			initialInitArgs : initFieldsWithInitArgs,
+		});
+
+		if (callConstructors) {
+			callUserConstructors.apply(this, args);
+		}
+		if (callAfterCreateInstance) {
+			if (typeof this.afterCreateInstance === 'function') {
+				this.afterCreateInstance();
+			}
+		}
+
+		return this;
 	}
 
 	/**
+	 * Regular instance initialization
 	 * @param {Function} clazz - the class to create
-	 * @param {*[]}      args  - array of arguments to pass to user constructors
-	 * @param {Object} [options]
-	 * @param {Boolean} [options.initializeFields=true] if false, doesn't bother adding class fields
-	 * @param {Boolean} [options.recursiveCall=false] internal flag that indicates this is recursive call
+	 * @param {Object}   source - the source of the initial field properties
 	 */
-	function createFunctionHelper(clazz, args, { initializeFields = true, recursiveCall = false } = {}) {
-		// regular instance initialization
-		if (this instanceof clazz) {
-			if (clazz.properties === undefined) {
-				throw new Error(`cannot instantiate stub class: ${this.constructor.__className__}`);
-			}
-
-			const constructingThis = this.constructor === clazz;
-
-			// if called recursively, then it's a casting instance creation (don't call constructors)
-			if (!constructingThis || !recursiveCall) {
-				// check for abstract class only if this is the top-level call (ie. not a base-class constructor call)
-				if (constructingThis && BaseClass.isAbstract.call(clazz)) {
-					const methodName = BaseClass.abstractMethodName.call(clazz);
-					const fieldName  = BaseClass.abstractFieldName.call(clazz);
-					throw new Error(`cannot instantiate abstract class: ${this.constructor.__className__} (${methodName ? `method : ${methodName}` : `field: ${fieldName}`})`);
-				}
-
-				// add instance fields
-				if (initializeFields) {
-					createFields.call(this, clazz.properties.fields);
-				}
-				callUserConstructors.apply(this, args);
-
-				if (typeof this.afterCreateInstance === 'function') {
-					this.afterCreateInstance();
-				}
-			}
-
-			return this;
-		}
-		// casting to base class
-
-		const source = args[0];
-
+	function castToBaseClass(clazz, source) {
 		if (source === undefined) {
 			throw new Error('required parameter missing; must supply a reference to subclass instance');
 		}
@@ -506,11 +523,12 @@ define(function(require, exports, module) {
 			throw new Error('can only cast to a base class');
 		}
 
-		const result = createFunction.call(Object.create(clazz.prototype), clazz, undefined, { initializeFields, recursiveCall : true });
-		createFields.call(result, clazz.properties.fields, source);
-
-		return result;
-
+		return JS.class.new(clazz, undefined, {
+			initFieldsWithValue     : source,
+			callConstructors        : false,
+			callAfterCreateInstance : false,
+			allowAbstractClasses    : true,
+		});
 	}
 
 	/**
@@ -640,24 +658,25 @@ define(function(require, exports, module) {
 	 * Helper function that adds the given fields to this object.
 	 * Expects to be called in the context of the class object.
 	 * @param {Object} fields - field definitions with keys being the field names and values being the field properties
-	 * @param {Object} [initialValues] - takes initial values for the fields from this object if provided
+	 * @param {Object}  [options]
+	 * @param {Boolean} [options.initAllFields=true] if false, only initializes fields named in initialValues or initialInitArgs
+	 * @param {Object}  [options.initialValues] takes initial values for the fields from this object
+	 * @param {Object}  [options.initialInitArgs] takes arguments for a field's possible init function from this object
 	 */
-	function createFields(fields, initialValues) {
+	function createFields(fields, { initAllFields = true, initialValues, initialInitArgs } = {}) {
 		const sortedFieldNames = getSortedFieldNames(fields);
 		const len              = sortedFieldNames.length;
+		let a                  = 0;
 
-		// separate for-loops for speed
-		if (initialValues) {
-			for (let a = 0; a < len; a++) {
-				const fieldName = sortedFieldNames[a];
+		while (a < len) {
+			const fieldName = sortedFieldNames[a];
+			if (initialValues && initialValues.hasOwnProperty(fieldName)) {
 				this[fieldName] = initialValues[fieldName];
 			}
-		}
-		else {
-			for (let a = 0; a < len; a++) {
-				const fieldName = sortedFieldNames[a];
-				this[fieldName] = JS.class.initialFieldValue(this, fields[fieldName]);
+			else if (initAllFields || (initialInitArgs && initialInitArgs.hasOwnProperty(fieldName))) {
+				this[fieldName] = JS.class.initialFieldValue(this, fields[fieldName], initialInitArgs ? initialInitArgs[fieldName] : undefined);
 			}
+			a++;
 		}
 	}
 
@@ -718,9 +737,10 @@ define(function(require, exports, module) {
 	 * Returns the initial value for a field.
 	 * @param  {Object | Function} instance is the instance of the class or the class itself if the field is static
 	 * @param  {Object | String} field the field specification or field name
+	 * @param  {Array} [initArgs] arguments passed to the init function if the field has one
 	 * @return {*}
 	 */
-	JS.class.initialFieldValue = function(instance, field) {
+	JS.class.initialFieldValue = function(instance, field, initArgs) {
 		if (typeof field === 'string') {
 			field = (instance.constructor || instance).getFieldProperties(field);
 		}
@@ -732,7 +752,7 @@ define(function(require, exports, module) {
 
 		switch (typeof field.init) {
 			case 'function':
-				return field.init.call(instance);
+				return field.init.apply(instance, initArgs);
 			case 'string':
 			case 'number':
 			case 'boolean':
@@ -761,8 +781,8 @@ define(function(require, exports, module) {
 	 *
 	 * NOTE: a method must be proxied using this function *before* any properties are assigned to it.
 	 *
-	 * @param  {function} method
-	 * @return {function}
+	 * @param  {Function} method
+	 * @return {Function}
 	 */
 	function makeSuperStackUpdaterProxy(method) {
 		// check if the method doesn't even contain a call to it's super method
@@ -865,9 +885,9 @@ define(function(require, exports, module) {
 
 	/**
 	 * Returns whether the given class is or is a subclass of the given class.
-	 * @param {Function} possibleSubclass
-	 * @param {Function | String | Object} ancestorClass or className or object instance of the ancestor class
-	 * @param {Boolean} [properSubclass=false] if true, possibleClass must be a proper subclass of ancestorClass (cannot be the same class)
+	 * @param  {Function} possibleSubclass
+	 * @param  {Function | String | Object} ancestorClass or className or object instance of the ancestor class
+	 * @param  {Boolean} [properSubclass=false] if true, possibleClass must be a proper subclass of ancestorClass (cannot be the same class)
 	 * @return {Boolean}
 	 */
 	JS.class.isSubclass = function(possibleSubclass, ancestorClass, properSubclass) {
@@ -959,7 +979,7 @@ define(function(require, exports, module) {
 			methods : {
 				/**
 				 * Returns whether this class is or is a subclass of the given class.
-				 * @param {Function | String | Object} ancestorClass or className or object instance of the ancestor class
+				 * @param  {Function | String | Object} ancestorClass or className or object instance of the ancestor class
 				 * @return {Boolean}
 				 */
 				isSubclass : function(ancestorClass) {
