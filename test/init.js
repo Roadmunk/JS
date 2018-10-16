@@ -134,4 +134,22 @@ describe('init.js', function() {
 		expect(() => new Cycle2()).to.throw(errorExp);
 		expect(() => new Cycle3()).to.throw(errorExp);
 	});
+
+	it("should allow passing arguments to the field's init function", function() {
+		const Foo = JS.class('Foo', {
+			fields : {
+				a : {
+					type : Number,
+					init : function(arg1) {
+						return arg1 !== undefined ? arg1 + 1 : 0;
+					},
+				},
+			},
+		});
+
+		const foo = new Foo();
+		expect(foo.a).to.equal(0);
+
+		expect(JS.class.initialFieldValue(foo, 'a', [ 5 ])).to.equal(6);
+	});
 });

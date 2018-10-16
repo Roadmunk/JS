@@ -284,15 +284,29 @@ describe('basic.js', function() {
 			expect(foo.d).to.equal(true);
 		});
 
-		it('should skip field initialization if initializeFields is not true', function() {
-			const foo = JS.class.new(Foo, [], { initializeFields : false });
+		it('should skip constructor calls if the callConstructors option is false', function() {
+			const foo = JS.class.new(Foo, [], { callConstructors : false });
+			expect(foo).to.be.instanceof(Foo);
+			expect(foo.constructorHistory).to.equal('');
+		});
+
+		it('should only initialize fields mentioned in initFieldsWithValue', function() {
+			const foo = JS.class.new(Foo, [], { initAllFields : false, initFieldsWithValue : { b : 5 } });
+			expect(foo).to.be.instanceof(Foo);
+			expect(foo.a).to.be.undefined;
+			expect(foo.b).to.equal(5);
+			expect(foo.c).to.be.undefined;
+		});
+
+		it('should only initialize fields mentioned in initFieldsWithInitArgs', function() {
+			const foo = JS.class.new(Foo, [], { initAllFields : false, initFieldsWithInitArgs : { j : [ 5 ] } });
 			expect(foo).to.be.instanceof(Foo);
 			expect(foo.a).to.be.undefined;
 			expect(foo.b).to.be.undefined;
 			expect(foo.c).to.be.undefined;
+			expect(foo.j).to.equal(5);
 		});
 	});
-
 
 	const ParentClass = JS.class('ParentClass', {
 		fields : {
@@ -347,8 +361,8 @@ describe('basic.js', function() {
 			},
 			j : {
 				type : null,
-				init : function() {
-					return {};
+				init : function(arg) {
+					return arg !== undefined ? arg : {};
 				},
 			},
 			k1 : {
