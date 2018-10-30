@@ -1,7 +1,7 @@
 'use strict'; // $super needs to work for classes that are declared in strict mode
 
 const expect = require('chai').expect;
-const JS     = require('../JS');
+const JS     = require('../dist/JS');
 
 describe('super.js', function() {
 
