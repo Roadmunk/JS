@@ -1,7 +1,7 @@
 'use strict';
 
 const { expect } = require('chai');
-const JS         = require('../JS');
+const JS         = require('../dist/JS');
 
 describe('abstract.js', function() {
 

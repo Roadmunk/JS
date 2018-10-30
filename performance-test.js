@@ -1,6 +1,6 @@
 'use strict';
 
-const JS = require('../JS');
+const JS = require('../dist/JS');
 
 const BaseClass   = JS.class('BaseClass');
 const Subclass    = JS.class('Subclass');
